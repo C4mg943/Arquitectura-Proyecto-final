@@ -1,0 +1,57 @@
+@startuml Casos_de_Uso_Nivel_1_UC06
+left to right direction
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #D6E4F0
+  BorderColor #2E75B6
+  FontColor #1F4E79
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #EAF4FB
+  BorderColor #2E75B6
+  FontColor #1F4E79
+}
+skinparam ArrowColor #2E75B6
+
+' Actores
+actor "Sistema" as Sistema
+actor "Productor\nAgrícola" as Productor
+actor "Técnico\nAgrónomo" as Tecnico
+
+' Sistema
+rectangle "Gestionar Alertas y Recomendaciones" {
+
+    ' Generación automática (arriba)
+    usecase "Generar Alerta\nClimática" as UC06_1
+    usecase "Generar Recomendación\nAgrícola" as UC06_3
+
+    ' Consulta (centro)
+    usecase "Consultar Alertas\ndel Cultivo" as UC06_2
+    usecase "Consultar Recomendaciones\ndel Cultivo" as UC06_4
+    usecase "Consultar\nNotificaciones" as UC06_5
+
+    ' Registro (abajo)
+    usecase "Registrar Alerta\nen Historial" as UC06_6
+    usecase "Registrar Recomendación\nen Historial" as UC06_7
+
+    ' Relaciones correctas
+    UC06_1 .> UC06_6 : <<include>>
+    UC06_3 .> UC06_7 : <<include>>
+    UC06_3 .> UC06_1 : <<extend>>
+}
+
+' Relaciones actores
+UC06_1 <-- Sistema
+UC06_3 <-- Sistema
+
+Productor --> UC06_2
+Productor --> UC06_4
+Productor --> UC06_5
+
+Tecnico --> UC06_2
+Tecnico --> UC06_4
+
+@enduml

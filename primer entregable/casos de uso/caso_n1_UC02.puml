@@ -1,0 +1,46 @@
+@startuml Casos_de_Uso_Nivel_1_UC02
+left to right direction
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #D6E4F0
+  BorderColor #2E75B6
+  FontColor #1F4E79
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #EAF4FB
+  BorderColor #2E75B6
+  FontColor #1F4E79
+}
+skinparam ArrowColor #2E75B6
+
+' Actor
+actor "Productor\nAgrícola" as Productor
+
+' Sistema
+rectangle "Gestionar Parcelas" {
+
+    ' Núcleo CRUD (arriba)
+    usecase "Registrar Parcela" as UC02_1
+    usecase "Modificar Parcela" as UC02_2
+    usecase "Eliminar Parcela" as UC02_3
+    usecase "Listar Parcelas" as UC02_4
+
+    ' Función extendida (abajo)
+    usecase "Asignar Operario\na Parcela" as UC02_5
+
+    ' Relaciones
+    UC02_5 .> UC02_1 : <<include>>
+    UC02_3 .> UC02_2 : <<extend>>
+}
+
+' Relaciones con actor
+Productor --> UC02_1
+Productor --> UC02_2
+Productor --> UC02_3
+Productor --> UC02_4
+Productor --> UC02_5
+
+@enduml

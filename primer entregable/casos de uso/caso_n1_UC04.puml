@@ -1,0 +1,60 @@
+@startuml Casos_de_Uso_Nivel_1_UC03
+left to right direction
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #D6E4F0
+  BorderColor #2E75B6
+  FontColor #1F4E79
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #EAF4FB
+  BorderColor #2E75B6
+  FontColor #1F4E79
+}
+skinparam ArrowColor #2E75B6
+
+' Actores
+actor "Productor\nAgrícola" as Productor
+actor Operario
+actor "Técnico\nAgrónomo" as Tecnico
+
+' Sistema
+rectangle "Registrar Actividades Agrícolas" {
+
+    ' Registro (arriba)
+    usecase "Registrar Riego" as UC03_1
+    usecase "Registrar Aplicación\nde Fertilizante" as UC03_2
+    usecase "Registrar Control\nde Plagas" as UC03_3
+    usecase "Registrar\nObservación" as UC03_4
+
+    ' Consulta (centro)
+    usecase "Consultar Historial\nde Actividades" as UC03_5
+    usecase "Filtrar Actividades\npor Tipo" as UC03_6
+
+    ' Analítica / recomendaciones (abajo)
+    usecase "Generar Recomendación\nde Fertilización" as RecoFert
+    usecase "Generar Recomendación\nFitosanitaria" as RecoFito
+
+    ' Relaciones correctas
+    UC03_6 .> UC03_5 : <<extend>>
+    UC03_2 .> RecoFert : <<include>>
+    UC03_3 .> RecoFito : <<include>>
+}
+
+' Relaciones actores
+Productor --> UC03_1
+Productor --> UC03_2
+Productor --> UC03_3
+Productor --> UC03_4
+Productor --> UC03_5
+
+UC03_1 <-- Operario
+UC03_2 <-- Operario
+UC03_3 <-- Operario
+
+Tecnico --> UC03_5
+
+@enduml
