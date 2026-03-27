@@ -145,26 +145,35 @@ Los **modelos** son las clases del dominio. Las usan todas las capas.
 ### 4.5 Estructura de carpetas del backend
 
 ```
-src
-├── app
-│   └── finca
-│       ├── controller
-│       ├── model
-│       │   └── dto
-│       ├── repository
-│       ├── route
-│       └── service
-├── config
-│   ├── api
-│   │   └── Servidor.ts
-│   ├── connection
-│   │   ├── camelCase.ts
-│   │   ├── dbConnetions.ts
-│   │   └── optionsPG.ts
-│   ├── domain
-│   └── test
+├── src
+│   ├── app
+│   │   └── finca
+│   │       ├── controller
+│   │       │   └── git
+│   │       ├── model
+│   │       │   └── dto
+│   │       │       └── git
+│   │       ├── repository
+│   │       │   └── git
+│   │       ├── route
+│   │       │   └── git
+│   │       └── service
+│   │           └── git
+│   ├── config
+│   │   ├── api
+│   │   │   └── Servidor.ts
+│   │   └── connection
+│   │       ├── camelCase.ts
+│   │       ├── dbConnetions.ts
+│   │       └── optionsPG.ts
+│   ├── middleware
+│   │   └── git
+│   └── index.ts
+├── docker-compose.yml
 ├── index.ts
-└── middleware
+├── package.json
+├── package-lock.json
+└── tsconfig.json
 
 ```
 
