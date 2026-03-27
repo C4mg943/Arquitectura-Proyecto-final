@@ -67,7 +67,8 @@ pdia/
 ### 4.1 Tecnologías instaladas
 
 ```json
-````de`pendencias:
+
+dependencias:
   express         → servidor HTTP
   cors            → permitir peticiones desde el frontend
   dotenv          → leer variables de entorno del .env
