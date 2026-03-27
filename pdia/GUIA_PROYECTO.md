@@ -79,17 +79,24 @@ devDependencias:
   typescript      → lenguaje
   ts-node         → ejecutar TypeScript directo sin compilar
   nodemon         → reiniciar servidor automáticamente al guardar
-  @types/*        → tipos para cada```` librería`
+  @types/*        → tipos para cada librería
 ```
 
 ### 4.2 Cómo ejecutar el backend
 
 ```bash
-# Entrar a la carpeta
+# Entrar a la carpeta del servidor
 cd pdia/backend
 
-# Instalar dependencias (solo la primera vez)
+# Instalar dependencias (basadas en el lockfile estable)
 npm install
+
+# IMPORTANTE: Compilar el proyecto antes de arrancar
+# Esto genera la carpeta /dist y verifica que no haya errores de TS
+npm run build
+
+# Levantar la base de datos (PostgreSQL) con Docker
+docker-compose up -d
 
 # Ejecutar en modo desarrollo
 npm run dev
@@ -103,10 +110,13 @@ El servidor corre en **http://localhost:3000**
 Crear el archivo `.env` en la raíz de `backend/` con este contenido:
 
 ```env
-PORT=3000
-DATABASE_URL=postgresql://usuario:password@localhost:5432/pdia
-JWT_SECRET=pdia_secret_key_2025
-JWT_EXPIRATION=7d
+
+# Datos de la Base de Datos (PostgreSQL)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=nombre_de_tu_db
+DB_USER=tu_usuario_admin
+DB_PASSWORD=tu_clave_segura
 ```
 
 > NUNCA subir el .env a GitHub. Ya está en el .gitignore.
@@ -152,7 +162,6 @@ src
 │   │   └── optionsPG.ts
 │   ├── domain
 │   └── test
-├── external_files
 ├── index.ts
 └── middleware
 
