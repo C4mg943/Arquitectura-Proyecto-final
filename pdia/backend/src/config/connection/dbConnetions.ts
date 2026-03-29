@@ -20,6 +20,7 @@ const pool = pgp({
 
 pool.connect().then((conex) => {
     console.log("Conectado a" + datbd)
+    conex.done();
 }).catch((error) => {
     console.log(error);
 });
