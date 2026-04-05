@@ -11,6 +11,7 @@ import WeatherPage from './features/weather/pages/WeatherPage'
 import AlertsPage from './features/alerts/pages/AlertsPage'
 import ReportsPage from './features/reports/pages/ReportsPage'
 import NotFoundPage from './features/not-found/pages/NotFoundPage'
+import { AppShell } from './shared/components/layout'
 
 /*// Util para proteger rutas
 const isAuthenticated = (): boolean => {
@@ -31,41 +32,62 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Rutas protegidas */}
-        <Route path="/" element={
-          //<PrivateRoute>
-            <DashboardPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/parcelas" element={
-          //<PrivateRoute>
-            <ParcelsPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/cultivos" element={
-          //<PrivateRoute>
-            <CropsPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/actividades" element={
-          //<PrivateRoute>
-            <ActivitiesPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/clima" element={
-          //<PrivateRoute>
-            <WeatherPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/alertas" element={
-          //<PrivateRoute>
-            <AlertsPage />
-          //</PrivateRoute>
-        } />
-        <Route path="/reportes" element={
-          //<PrivateRoute>
-            <ReportsPage />
-          //</PrivateRoute>
-        } />
+        <Route
+          path="/"
+          element={
+            <AppShell>
+              <DashboardPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/parcelas"
+          element={
+            <AppShell>
+              <ParcelsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/cultivos"
+          element={
+            <AppShell>
+              <CropsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/actividades"
+          element={
+            <AppShell>
+              <ActivitiesPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/clima"
+          element={
+            <AppShell>
+              <WeatherPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/alertas"
+          element={
+            <AppShell>
+              <AlertsPage />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/reportes"
+          element={
+            <AppShell>
+              <ReportsPage />
+            </AppShell>
+          }
+        />
 
         {/* Ruta raíz redirige según auth */}
         <Route path="*" element={<NotFoundPage />} />

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AgroPrecision - Activities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary": "#154212",
+                        "primary-container": "#2d5a27",
+                        "on-primary": "#ffffff",
+                        "background": "#f7faf5",
+                        "tertiary-container": "#005484",
+                        "on-primary-fixed": "#002201",
+                        "on-surface-variant": "#42493e",
+                        "surface-variant": "#e0e3df",
+                        "on-primary-fixed-variant": "#23501e",
+                        "secondary": "#7a5649",
+                        "on-tertiary-fixed": "#001d32",
+                        "on-background": "#191c1a",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#fdcdbc",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#bcf0ae",
+                        "surface-tint": "#3b6934",
+                        "primary-fixed-dim": "#a1d494",
+                        "outline-variant": "#c2c9bb",
+                        "surface-container-low": "#f1f4ef",
+                        "on-secondary-fixed-variant": "#603f33",
+                        "on-tertiary-container": "#8dc8ff",
+                        "surface-dim": "#d8dbd6",
+                        "inverse-surface": "#2d312e",
+                        "outline": "#72796e",
+                        "surface-container-high": "#e6e9e4",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#9dd090",
+                        "secondary-fixed-dim": "#ebbcac",
+                        "surface-container": "#ecefea",
+                        "inverse-primary": "#a1d494",
+                        "surface": "#f7faf5",
+                        "surface-bright": "#f7faf5",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#2e150b",
+                        "tertiary-fixed": "#cee5ff",
+                        "tertiary": "#003c60",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "surface-container-highest": "#e0e3df",
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "on-surface": "#191c1a",
+                        "inverse-on-surface": "#eff2ed",
+                        "on-secondary-container": "#795548",
+                        "secondary-fixed": "#ffdbcf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<span class="text-xl font-bold text-emerald-900 font-headline tracking-tight">AgroPrecision</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex bg-surface-container-low px-4 py-2 rounded-full items-center gap-2">
+<span class="material-symbols-outlined text-zinc-500" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body" placeholder="Search activities..." type="text"/>
+</div>
+<span class="material-symbols-outlined text-emerald-900" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-emerald-900" data-icon="account_circle">account_circle</span>
+</div>
+</nav>
+<div class="flex pt-20 pb-24 lg:pb-0">
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden lg:flex flex-col gap-2 p-4 h-screen w-72 left-0 top-0 fixed bg-surface-container-low border-r border-zinc-100 font-body">
+<div class="px-4 py-6 mb-4">
+<h2 class="text-lg font-bold text-emerald-900 font-headline">The Agronomist</h2>
+<p class="text-xs text-zinc-500">Precision Yield Management</p>
+</div>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="potted_plant">potted_plant</span>
+<span class="text-sm font-medium">Parcels</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="agriculture">agriculture</span>
+<span class="text-sm font-medium">Crops</span>
+</a>
+<!-- Active Navigation: Activities -->
+<a class="flex items-center gap-3 p-3 bg-emerald-100/50 text-emerald-900 rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="text-sm">Activities</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="partly_cloudy_day">partly_cloudy_day</span>
+<span class="text-sm font-medium">Weather</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-zinc-600 hover:bg-zinc-200/50 transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="text-sm font-medium">Admin</span>
+</a>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-72 px-4 md:px-8 py-6">
+<!-- Header Section -->
+<header class="mb-8">
+<h1 class="text-3xl font-extrabold text-on-primary-fixed-variant font-headline tracking-tight mb-2">Historial de Actividades</h1>
+<p class="text-on-surface-variant max-w-2xl">Seguimiento detallado de las operaciones de campo y gestión de cultivos en tiempo real.</p>
+</header>
+<!-- Filters & Stats Bento-ish Grid -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+<!-- Filter Card -->
+<div class="md:col-span-3 bg-surface-container-lowest p-6 rounded-xl flex flex-wrap items-center gap-4">
+<div class="flex-1 min-w-[200px]">
+<label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Filtrar por Tipo</label>
+<select class="w-full bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-container">
+<option>Todas las actividades</option>
+<option>Riego</option>
+<option>Fertilización</option>
+<option>Plagas</option>
+<option>Observaciones</option>
+</select>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Cultivo</label>
+<select class="w-full bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary-container">
+<option>Todos los cultivos</option>
+<option>Maíz Híbrido XL</option>
+<option>Soja Premium</option>
+<option>Trigo de Invierno</option>
+</select>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-bold text-sm h-[42px] mt-5 self-end flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="filter_list">filter_list</span>
+                        Aplicar
+                    </button>
+</div>
+<!-- Sync Status Card -->
+<div class="bg-tertiary text-on-tertiary p-6 rounded-xl flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined mb-2" data-icon="cloud_sync">cloud_sync</span>
+<h3 class="text-sm font-bold">Estado Offline</h3>
+</div>
+<div class="mt-4">
+<span class="text-2xl font-bold">3</span>
+<span class="text-xs opacity-80 block">Pendientes de sincronizar</span>
+</div>
+</div>
+</section>
+<!-- Activities Timeline List -->
+<div class="space-y-4">
+<!-- Activity Item: Pending Sync -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex flex-col md:flex-row md:items-center gap-4 group hover:bg-white transition-all">
+<div class="flex items-center gap-4 flex-1">
+<div class="h-12 w-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined" data-icon="water_drop">water_drop</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-on-surface">Riego - Sector Norte B2</h4>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="sync_problem">sync_problem</span>
+                                    OFFLINE
+                                </span>
+</div>
+<p class="text-sm text-on-surface-variant mt-1">Caudal aplicado: 450L/ha. Duración: 2h 15min.</p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-3 md:pt-0 border-zinc-100">
+<div class="text-right">
+<p class="text-xs font-bold text-zinc-400 uppercase tracking-tighter">Hoy, 09:45 AM</p>
+<p class="text-[10px] text-zinc-500 font-medium">Maíz Híbrido XL</p>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Activity Item: Fertilization -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex flex-col md:flex-row md:items-center gap-4 group hover:bg-white transition-all">
+<div class="flex items-center gap-4 flex-1">
+<div class="h-12 w-12 rounded-full bg-secondary-container flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-on-surface">Fertilización - Lote 04</h4>
+</div>
+<p class="text-sm text-on-surface-variant mt-1">Aplicación de NPK granulado. Suelo con humedad óptima.</p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-3 md:pt-0 border-zinc-100">
+<div class="text-right">
+<p class="text-xs font-bold text-zinc-400 uppercase tracking-tighter">Ayer, 16:20 PM</p>
+<p class="text-[10px] text-zinc-500 font-medium">Soja Premium</p>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Activity Item: Pest Control -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex flex-col md:flex-row md:items-center gap-4 group hover:bg-white transition-all">
+<div class="flex items-center gap-4 flex-1">
+<div class="h-12 w-12 rounded-full bg-error-container flex items-center justify-center text-on-error-container shrink-0">
+<span class="material-symbols-outlined" data-icon="pest_control">pest_control</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-on-surface">Control de Plagas - Invernadero A</h4>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">SINCRONIZADO</span>
+</div>
+<p class="text-sm text-on-surface-variant mt-1">Detección de Spodoptera frugiperda. Tratamiento biológico aplicado.</p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-3 md:pt-0 border-zinc-100">
+<div class="text-right">
+<p class="text-xs font-bold text-zinc-400 uppercase tracking-tighter">12 Oct, 11:30 AM</p>
+<p class="text-[10px] text-zinc-500 font-medium">Tomate Cherry</p>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+<!-- Activity Item: Observation -->
+<div class="bg-surface-container-lowest p-5 rounded-xl flex flex-col md:flex-row md:items-center gap-4 group hover:bg-white transition-all">
+<div class="flex items-center gap-4 flex-1">
+<div class="h-12 w-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container shrink-0">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-bold text-on-surface">Observación General - Terreno Oeste</h4>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="sync_problem">sync_problem</span>
+                                    OFFLINE
+                                </span>
+</div>
+<p class="text-sm text-on-surface-variant mt-1">Crecimiento vegetativo vigoroso. No se observan deficiencias nutricionales.</p>
+</div>
+</div>
+<div class="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-3 md:pt-0 border-zinc-100">
+<div class="text-right">
+<p class="text-xs font-bold text-zinc-400 uppercase tracking-tighter">11 Oct, 08:15 AM</p>
+<p class="text-[10px] text-zinc-500 font-medium">Trigo de Invierno</p>
+</div>
+<span class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Image/Journal Visualization -->
+<section class="mt-12">
+<div class="relative h-64 w-full rounded-2xl overflow-hidden mb-6">
+<img class="w-full h-full object-cover" data-alt="expansive lush green wheat field under a clear blue sky with agricultural drone flying above during daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYlsZYNYvF8XjQjbFvGaI_ea5ohxS13TtATIs1f37TAx_MMB23tJ6v-CGgD3N4UwfRgk4PlDjWh7MW9j2tmrsAoEVCeDaZy34NUtOPI86x_Q36loWf0V96J5upZauVknEJswfCmldpMzbNYxQ71eVqY8Seu4AZo-xfuuLa1XIFM26xv1SJBeIieF1jEZZ4Ej16t1OZf8Vuq9zp_DOsau-EZj33X1Yn9LlrIdQEF0bFR8j5arnqZRd1cjRb55NPBxRVXwC972EicGA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
+<h2 class="text-white text-2xl font-bold font-headline">Bitácora de Campo</h2>
+<p class="text-white/80 text-sm">Visualiza el progreso físico de tus cultivos mediante registros fotográficos.</p>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 lg:bottom-12 right-6 bg-primary text-on-primary w-16 h-16 rounded-full flex items-center justify-center shadow-2xl z-[60] active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+<span class="sr-only">Registrar Actividad</span>
+</button>
+<!-- BottomNavBar (Mobile) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-surface/90 backdrop-blur-xl border-t border-zinc-100 z-50">
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="text-[10px] font-medium mt-1">Fields</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="grass">grass</span>
+<span class="text-[10px] font-medium mt-1">Crops</span>
+</a>
+<!-- Active State for Home/Activities Context -->
+<a class="flex flex-col items-center justify-center bg-emerald-800 text-white rounded-xl p-2 h-12 w-12 scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="cloudy">cloudy</span>
+<span class="text-[10px] font-medium mt-1">Weather</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[10px] font-medium mt-1">Admin</span>
+</a>
+</nav>
+</body></html>

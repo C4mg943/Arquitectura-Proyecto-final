@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AgroPrecision - Parcels Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "primary": "#154212",
+                        "primary-container": "#2d5a27",
+                        "on-primary": "#ffffff",
+                        "background": "#f7faf5",
+                        "tertiary-container": "#005484",
+                        "on-primary-fixed": "#002201",
+                        "on-surface-variant": "#42493e",
+                        "surface-variant": "#e0e3df",
+                        "on-primary-fixed-variant": "#23501e",
+                        "secondary": "#7a5649",
+                        "on-tertiary-fixed": "#001d32",
+                        "on-background": "#191c1a",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#fdcdbc",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#bcf0ae",
+                        "surface-tint": "#3b6934",
+                        "primary-fixed-dim": "#a1d494",
+                        "outline-variant": "#c2c9bb",
+                        "surface-container-low": "#f1f4ef",
+                        "on-secondary-fixed-variant": "#603f33",
+                        "on-tertiary-container": "#8dc8ff",
+                        "surface-dim": "#d8dbd6",
+                        "inverse-surface": "#2d312e",
+                        "outline": "#72796e",
+                        "surface-container-high": "#e6e9e4",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#9dd090",
+                        "secondary-fixed-dim": "#ebbcac",
+                        "surface-container": "#ecefea",
+                        "inverse-primary": "#a1d494",
+                        "surface": "#f7faf5",
+                        "surface-bright": "#f7faf5",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#2e150b",
+                        "tertiary-fixed": "#cee5ff",
+                        "tertiary": "#003c60",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "surface-container-highest": "#e0e3df",
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "on-surface": "#191c1a",
+                        "inverse-on-surface": "#eff2ed",
+                        "on-secondary-container": "#795548",
+                        "secondary-fixed": "#ffdbcf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+body {
+    font-family: "Inter", sans-serif;
+    background-color: #f7faf5;
+    color: #191c1a
+    }
+h1, h2, h3 {
+    font-family: "Manrope", sans-serif
+    }
+.grain-overlay {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuAzTU2YCL9AzbEM4BoI7hJh_QfOxCOwuQ51HjvxopOn6CjxfCnhyr0cduAan8kqh7gPXjurkQZ8iYICM6l82QPbOYJVAMBo8A_CI01H7fphcvMmqdvldP_djcKyXx0FBRZnxl6T4_lW3n2WUG9B4kanagSLGSbsSeV1zUQ3USQgRnzGm05-eH94DmDq9PEA9AK-PclIy5fjXnuS2Z8WKlROn-WU-9Ii2fy94bY8z-GboDbCN0G7GAia51OwZblFbhUl-lLIYJGDso4);
+    opacity: 0.03;
+    pointer-events: none
+    }</style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col md:flex-row">
+<!-- TopAppBar (Mobile & Global Anchor) -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<span class="text-xl font-bold text-emerald-900 font-headline tracking-tight">AgroPrecision</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border-none">
+<span class="material-symbols-outlined text-zinc-500 text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 text-zinc-600" placeholder="Search parcels..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-zinc-500 hover:bg-emerald-50 transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-zinc-500 hover:bg-emerald-50 transition-colors rounded-full">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden lg:flex flex-col gap-2 p-4 h-screen w-72 fixed left-0 top-0 bg-surface-container-low z-40">
+<div class="mb-10 mt-20 px-4">
+<h2 class="text-lg font-bold text-emerald-900 font-headline">The Agronomist</h2>
+<p class="text-xs text-zinc-500 font-medium tracking-wide">Precision Yield Management</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm font-label">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-emerald-100/50 text-emerald-900 rounded-lg font-bold transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined">potted_plant</span>
+<span class="font-medium text-sm font-label">Parcels</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">agriculture</span>
+<span class="font-medium text-sm font-label">Crops</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+<span class="font-medium text-sm font-label">Activities</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">partly_cloudy_day</span>
+<span class="font-medium text-sm font-label">Weather</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-medium text-sm font-label">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 hover:bg-zinc-200/50 transition-transform active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+<span class="font-medium text-sm font-label">Admin</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-72 pt-24 pb-32 px-6 md:px-12">
+<div class="max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<h1 class="text-4xl font-extrabold text-on-primary-fixed-variant tracking-tight mb-2">Parcels Inventory</h1>
+<p class="text-zinc-600 max-w-xl text-lg">Manage your agricultural assets and monitor yield distribution across all registered locations.</p>
+</div>
+<button class="bg-primary text-on-primary px-8 py-4 rounded-lg font-semibold flex items-center gap-3 hover:opacity-90 transition-all shadow-xl shadow-primary/10">
+<span class="material-symbols-outlined">add_circle</span>
+                    Añadir Parcela
+                </button>
+</div>
+<!-- Stats Overview (Asymmetric Tonal Layering) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+<div class="bg-surface-container-lowest p-8 rounded-xl flex flex-col gap-2">
+<span class="text-zinc-500 font-label text-xs uppercase tracking-widest">Total Area</span>
+<span class="text-4xl font-bold font-headline text-primary">1,240 <span class="text-lg font-medium opacity-50">Ha</span></span>
+</div>
+<div class="bg-surface-container-low p-8 rounded-xl flex flex-col gap-2">
+<span class="text-zinc-500 font-label text-xs uppercase tracking-widest">Active Parcels</span>
+<span class="text-4xl font-bold font-headline text-primary">24</span>
+</div>
+<div class="bg-secondary-container p-8 rounded-xl flex flex-col gap-2">
+<span class="text-on-secondary-container font-label text-xs uppercase tracking-widest">Avg. Yield Status</span>
+<span class="text-4xl font-bold font-headline text-on-secondary-container">Optimal</span>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="flex flex-wrap gap-4 items-center mb-8">
+<div class="flex-1 min-w-[300px] relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-on-surface shadow-sm" placeholder="Filtrar por nombre o municipio..." type="text"/>
+</div>
+<button class="px-6 py-4 bg-surface-container-high rounded-xl text-zinc-700 font-medium flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+                    Municipios
+                </button>
+<button class="px-6 py-4 bg-surface-container-high rounded-xl text-zinc-700 font-medium flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined">sort</span>
+                    Hectáreas
+                </button>
+</div>
+<!-- Parcels Grid (Clean Cards) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+<div class="h-48 w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="high angle shot of a large vibrant green farming field organized in symmetrical rows during sunrise" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjzfmso_u0WzEeeEYmR6fr8LPLH0M0OLrBbGuciz5K5wWx32gny8LlPLGx2BWzNZpO8h9uYpMw8kL1ifW0w3X1_ocNPki6PpdR7FXG3Yf8UnaDFftCHwaugjm5tHyIOpT8pa1-VM2eG0mYNXI26lbEpeUHcroRsQWWJE2KGgpspP3czKEzzUDNb24XkbfeiATmE995ufvDzAVksup55Bboc0394CKGs5VWch9Fw_HxoI9XxvRuNc9IYEBH9gVeA4NvwXyc0ZmJYHo"/>
+<div class="absolute top-4 right-4 bg-primary/90 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">82% Humedad</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-emerald-900 mb-1">Finca El Paraíso</h3>
+<div class="flex items-center gap-1 text-zinc-500 text-sm">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                    Villavicencio, Meta
+                                </div>
+</div>
+<span class="bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Productivo</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">ÁREA</span>
+<span class="font-headline font-bold text-on-surface">145 Ha</span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">CULTIVOS</span>
+<span class="font-headline font-bold text-on-surface">4 Variedades</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex-1 py-3 bg-surface-container-highest text-primary font-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all text-sm">Ver detalles</button>
+<button class="p-3 bg-surface-container-low text-zinc-500 rounded-lg hover:bg-zinc-200 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+<div class="h-48 w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="close up of neat rows of green crops growing in dark rich soil under a bright blue sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAb5CBLQae8TM7NUsOGkbnWhJnQrpdSrdZek2ikL__YfaIxfjVznb4guWoTs02cIhK0DhvVH3NODA1CmNE_iRcRy0vPAotPO98fwNDOBMNXifZvJFk7_iWn-R5Jx2lt-al7zOxlPsP5I0wG-kblL_jZm1_3g1-KUSkwt-vTlEzJ6Kj2sKZqTirJFSWhu0-WgRpcWyWUB6ow_jckH_-xC8pJQtlYSkHIkL0OoW4GPFE0yAmqIdbR6HWtcL6xDLVj7ACBoZYp7hok4O8"/>
+<div class="absolute top-4 right-4 bg-tertiary text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">Sembrado Reciente</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-emerald-900 mb-1">Lote Las Brisas</h3>
+<div class="flex items-center gap-1 text-zinc-500 text-sm">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                    Espinal, Tolima
+                                </div>
+</div>
+<span class="bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Productivo</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">ÁREA</span>
+<span class="font-headline font-bold text-on-surface">320 Ha</span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">CULTIVOS</span>
+<span class="font-headline font-bold text-on-surface">2 Variedades</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex-1 py-3 bg-surface-container-highest text-primary font-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all text-sm">Ver detalles</button>
+<button class="p-3 bg-surface-container-low text-zinc-500 rounded-lg hover:bg-zinc-200 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+<div class="h-48 w-full relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="aerial drone view of geometric agricultural fields in different shades of green and gold during harvest season" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS8GM0fTOMY264-NjhZIwJVTlc6gc9KvrsPD0KiPW_o1WDNVg9pFlVlcHxefQAQ_qSyfDTnsBAlOPgvf8_bNZCd23SedMVEhxLiyHOJZDxainoDgFgPeVnU0xmmStkrB_g8YIUMGOj_vnlk-qgCstqKn19-PB8AErGWGojH75xCITKrkWznBj1G0EsFSAQSCbvYWdf3oqz3glAIgzz83Sjl_L5TFIAI4hWTjIlnTYGOPq4MaVL-i0UfJbwT2pA8UNDNpps6EySgNk"/>
+<div class="absolute top-4 right-4 bg-error text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">Atención Requerida</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xl font-bold text-emerald-900 mb-1">Hacienda Real</h3>
+<div class="flex items-center gap-1 text-zinc-500 text-sm">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                                    Pereira, Risaralda
+                                </div>
+</div>
+<span class="bg-error-container text-on-error-container px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">En Alerta</span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">ÁREA</span>
+<span class="font-headline font-bold text-on-surface">88 Ha</span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg">
+<span class="text-[10px] text-zinc-400 font-bold block mb-1">CULTIVOS</span>
+<span class="font-headline font-bold text-on-surface">1 Variedad</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex-1 py-3 bg-surface-container-highest text-primary font-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all text-sm">Ver detalles</button>
+<button class="p-3 bg-surface-container-low text-zinc-500 rounded-lg hover:bg-zinc-200 transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Empty State / Add New Placeholder -->
+<div class="bg-transparent border-2 border-dashed border-zinc-200 rounded-2xl flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
+<div class="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mb-4 text-zinc-400">
+<span class="material-symbols-outlined text-3xl">add_home_work</span>
+</div>
+<h3 class="text-lg font-bold text-zinc-500 mb-2">Nueva Parcela</h3>
+<p class="text-zinc-400 text-sm mb-6 max-w-[200px]">Expande tus operaciones registrando un nuevo lote de tierra.</p>
+<button class="text-primary font-bold text-sm hover:underline">Click para configurar</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-surface/90 backdrop-blur-xl z-50 rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-zinc-100">
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-inter text-[10px] font-medium mt-1">Fields</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined">grass</span>
+<span class="font-inter text-[10px] font-medium mt-1">Crops</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-emerald-800 text-white rounded-xl p-2 h-12 w-12 scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined">cloudy</span>
+<span class="font-inter text-[10px] font-medium mt-1">Weather</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 p-2" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-inter text-[10px] font-medium mt-1">Admin</span>
+</a>
+</nav>
+<div class="grain-overlay fixed inset-0 z-[100]"></div>
+</body></html>

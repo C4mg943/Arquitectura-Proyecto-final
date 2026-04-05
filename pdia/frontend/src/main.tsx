@@ -7,13 +7,13 @@ import App from './App.tsx'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        console.log('SW registrado con éxito:', registration.scope);
+      .then(() => {
+        // service worker registered
       })
-      .catch(error => {
-        console.log('Error al registrar el SW:', error);
-      });
-  });
+      .catch(() => {
+        // service worker registration failed
+      })
+  })
 }
 
 createRoot(document.getElementById('root')!).render(

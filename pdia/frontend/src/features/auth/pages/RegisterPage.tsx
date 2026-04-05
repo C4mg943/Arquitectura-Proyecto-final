@@ -1,41 +1,33 @@
+import { Link } from 'react-router-dom'
+
+import { Button, Card, Input } from '../../../shared/components/common'
+
 export default function RegisterPage() {
   return (
-    <section className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
-      <h1 className="mb-2 text-2xl font-bold text-slate-900">Registro</h1>
-      <p className="mb-6 text-sm text-slate-600">Crea tu cuenta de productor agrícola.</p>
-
-      <form className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="nombre">
-            Nombre completo
-          </label>
-          <input
-            id="nombre"
-            type="text"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-emerald-500 focus:ring-2"
-            placeholder="Ej: Juan Pérez"
-          />
+    <section className="flex min-h-screen items-center justify-center bg-surface px-6 py-10">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <h1 className="text-headline-md text-primary">Crear cuenta</h1>
+          <p className="mt-2 text-on-surface-variant">Regístrate como productor agrícola</p>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="correo-registro">
-            Correo
-          </label>
-          <input
-            id="correo-registro"
-            type="email"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-emerald-500 focus:ring-2"
-            placeholder="correo@ejemplo.com"
-          />
-        </div>
+        <Card className="space-y-5">
+          <Input id="name" icon="person" label="Nombre completo" placeholder="Ej: Juan Pérez" type="text" />
+          <Input id="email-register" icon="mail" label="Correo" placeholder="correo@ejemplo.com" type="email" />
+          <Input id="password-register" icon="lock" label="Contraseña" placeholder="••••••••" type="password" />
 
-        <button
-          type="button"
-          className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-        >
-          Crear cuenta
-        </button>
-      </form>
+          <Button className="w-full" type="button" variant="primary">
+            Crear cuenta
+          </Button>
+
+          <p className="text-center text-sm text-on-surface-variant">
+            ¿Ya tienes cuenta?
+            <Link className="ml-1 font-bold text-primary hover:underline" to="/login">
+              Iniciar sesión
+            </Link>
+          </p>
+        </Card>
+      </div>
     </section>
   )
 }
