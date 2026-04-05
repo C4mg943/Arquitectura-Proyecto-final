@@ -6,9 +6,10 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "start": "node index.ts",
-    "dev": "nodemon build/index.ts",
-    "build": "tsc -w"
+    "start": "node build/index.js",
+    "dev": "nodemon --watch src --exec ts-node src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "Darwin Alvarez, Camilo Monsalve, Wilson Ali",
