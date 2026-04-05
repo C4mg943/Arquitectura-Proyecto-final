@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: pdia_postgres_db
+    restart: always
+    environment:
+      # Usamos las variables del .env con la sintaxis ${VARIABLE}
+      POSTGRES_USER: ${USER_DB}
+      POSTGRES_PASSWORD: ${USER_PASSWORD}
+      POSTGRES_DB: ${DATABASE}
+    ports:
+      - "${PORT}:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - pdia_network
+
+networks:
+  pdia_network:
+    driver: bridge
