@@ -9,6 +9,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
+  { to: '/profile', label: 'Perfil', icon: 'person' },
   { to: '/parcelas', label: 'Parcelas', icon: 'potted_plant' },
   { to: '/cultivos', label: 'Cultivos', icon: 'agriculture' },
   { to: '/actividades', label: 'Actividades', icon: 'pending_actions' },

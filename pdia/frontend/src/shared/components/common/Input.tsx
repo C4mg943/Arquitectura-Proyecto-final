@@ -10,7 +10,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export default function Input({ label, icon, helperText, id, className, ...props }: InputProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <label className="text-label-md block text-on-surface-variant" htmlFor={id}>
         {label}
       </label>
@@ -24,7 +24,7 @@ export default function Input({ label, icon, helperText, id, className, ...props
         <input
           id={id}
           className={cn(
-            'w-full rounded-xl border-0 bg-surface-container-low px-4 py-4 text-sm text-on-surface outline-none ring-0 transition focus:ring-2 focus:ring-primary',
+            'w-full rounded-2xl border border-outline-variant/45 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface shadow-[0_1px_2px_rgb(25_28_26_/_4%)] outline-none ring-0 transition-all duration-200 placeholder:text-outline focus:-translate-y-0.5 focus:border-primary/60 focus:shadow-[0_12px_24px_rgb(21_66_18_/_12%)] focus:ring-2 focus:ring-primary/30',
             icon ? 'pl-11' : '',
             className,
           )}

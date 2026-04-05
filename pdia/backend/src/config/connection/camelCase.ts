@@ -1,6 +1,6 @@
 import pgPromise from "pg-promise";
 
-export interface IClient {}
+export type IClient = Record<string, unknown>;
 
 export function camelizeColums(data: any) {
     const tmp = data[0];

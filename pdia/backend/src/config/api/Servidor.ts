@@ -7,6 +7,9 @@ import { initSchema } from "../connection/initSchema";
 import authRouter from "../../app/finca/route/AuthRoutes";
 import parcelaRouter from "../../app/finca/route/ParcelaRoutes";
 import cultivoRouter from "../../app/finca/route/CultivoRoutes";
+import actividadRouter from "../../app/finca/route/ActividadRoutes";
+import alertaRouter from "../../app/finca/route/AlertaRoutes";
+import reporteRouter from "../../app/finca/route/ReporteRoutes";
 import { ErrorHandler } from "../../middleware/ErrorHandler";
 
 class Servidor
@@ -21,13 +24,16 @@ class Servidor
         this.app.use(Express.json({limit:"100mb"}));
         this.app.use(Express.urlencoded({extended:true}));
 
-        this.app.get("/", (req, res) => {
+        this.app.get("/", (_req, res) => {
             res.status(200).json({ success: true, message: "Servidor iniciado" });
         });
 
         this.app.use("/api/auth", authRouter);
         this.app.use("/api/parcelas", parcelaRouter);
         this.app.use("/api/cultivos", cultivoRouter);
+        this.app.use("/api/actividades", actividadRouter);
+        this.app.use("/api/alertas", alertaRouter);
+        this.app.use("/api/reportes", reporteRouter);
         this.app.use(ErrorHandler);
 
     }

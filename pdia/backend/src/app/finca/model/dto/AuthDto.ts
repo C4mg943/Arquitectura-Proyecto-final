@@ -1,4 +1,4 @@
-import { UserRole } from "../User";
+import type { UserRole } from "../User";
 
 export interface RegisterUserDto {
     nombre: string;
@@ -24,4 +24,29 @@ export interface PublicUserDto {
 export interface AuthResponseDto {
     token: string;
     user: PublicUserDto;
+}
+
+export interface ForgotPasswordDto {
+    email: string;
+}
+
+export interface ForgotPasswordResponseDto {
+    requestAccepted: boolean;
+    resetUrl?: string;
+}
+
+export interface ResetPasswordDto {
+    token: string;
+    password: string;
+}
+
+export interface UpdateProfileDto {
+    nombre?: string;
+    identificacion?: string;
+    email?: string;
+}
+
+export interface UpdatePasswordDto {
+    currentPassword: string;
+    newPassword: string;
 }

@@ -43,7 +43,48 @@ export async function initSchema(): Promise<void> {
         );
     `;
 
+    const actividadesTable = `
+        CREATE TABLE IF NOT EXISTS actividades (
+            id SERIAL PRIMARY KEY,
+            tipo VARCHAR(30) NOT NULL,
+            fecha DATE NOT NULL,
+            descripcion TEXT NOT NULL,
+            datos JSONB NULL,
+            cultivo_id INTEGER NOT NULL REFERENCES cultivos(id) ON DELETE CASCADE,
+            creado_por_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+    `;
+
+    const alertasTable = `
+        CREATE TABLE IF NOT EXISTS alertas (
+            id SERIAL PRIMARY KEY,
+            tipo VARCHAR(40) NOT NULL,
+            valor_detectado NUMERIC(10,2) NOT NULL,
+            fecha DATE NOT NULL,
+            cultivo_id INTEGER NOT NULL REFERENCES cultivos(id) ON DELETE CASCADE,
+            leida BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+    `;
+
+    const passwordResetTokensTable = `
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token_hash VARCHAR(255) NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            used_at TIMESTAMP NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        );
+    `;
+
     await pool.none(usersTable);
     await pool.none(parcelasTable);
     await pool.none(cultivosTable);
+    await pool.none(actividadesTable);
+    await pool.none(alertasTable);
+    await pool.none(passwordResetTokensTable);
 }

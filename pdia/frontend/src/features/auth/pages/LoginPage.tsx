@@ -1,8 +1,49 @@
-import { Link } from 'react-router-dom'
+import { type FormEvent, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { Button, Card, Input } from '../../../shared/components/common'
+import { apiClient, ApiClientError } from '../../../shared/services/apiClient'
+import { loginSchema } from '../../../shared/utils/validators'
+import { useAuthStore } from '../../../store/authStore'
 
 export default function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const setAuth = useAuthStore((state) => state.setAuth)
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+
+    const parsed = loginSchema.safeParse({ email, password })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Datos inválidos')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await apiClient.auth.login(parsed.data)
+      setAuth(response.token, response.user)
+      navigate(redirectTo, { replace: true })
+    } catch (unknownError) {
+      if (unknownError instanceof ApiClientError) {
+        setError(unknownError.message)
+      } else {
+        setError('No fue posible iniciar sesión en este momento.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section className="relative flex min-h-screen items-center justify-center bg-surface px-6 py-10">
       <div className="grain-overlay absolute inset-0" aria-hidden="true" />
@@ -19,18 +60,40 @@ export default function LoginPage() {
         </div>
 
         <Card className="space-y-6">
-          <form className="space-y-5">
-            <Input id="email" icon="mail" label="Correo electrónico" placeholder="nombre@empresa.com" type="email" />
-            <Input id="password" icon="lock" label="Contraseña" placeholder="••••••••" type="password" />
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <Input
+              id="email"
+              icon="mail"
+              label="Correo electrónico"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="nombre@empresa.com"
+              type="email"
+              value={email}
+            />
+            <Input
+              id="password"
+              icon="lock"
+              label="Contraseña"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
+              type="password"
+              value={password}
+            />
+
+            {error ? (
+              <p className="rounded-xl bg-error-container px-3 py-2 text-sm font-semibold text-on-error-container">
+                {error}
+              </p>
+            ) : null}
 
             <div className="flex justify-end">
-              <Link className="text-sm font-semibold text-primary hover:text-primary-container" to="/register">
+              <Link className="text-sm font-semibold text-primary hover:text-primary-container" to="/forgot-password">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
 
-            <Button className="w-full" trailingIcon="arrow_forward" type="submit" variant="primary">
-              Entrar
+            <Button className="w-full" disabled={isSubmitting} trailingIcon="arrow_forward" type="submit" variant="primary">
+              {isSubmitting ? 'Ingresando...' : 'Entrar'}
             </Button>
           </form>
 

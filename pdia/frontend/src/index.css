@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import 'tailwindcss';
 
 :root {
   --font-headline: 'Manrope', sans-serif;
@@ -52,8 +54,12 @@ body,
 body {
   margin: 0;
   font-family: var(--font-body);
-  background-color: var(--color-surface);
+  background:
+    radial-gradient(1200px 700px at 10% -10%, rgb(188 240 174 / 35%), transparent 60%),
+    radial-gradient(1000px 600px at 90% -20%, rgb(0 84 132 / 14%), transparent 60%),
+    var(--color-surface);
   color: var(--color-on-surface);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -63,8 +69,10 @@ a {
 }
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  font-size: 1.25rem;
   line-height: 1;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Typography tokens */
@@ -225,23 +233,25 @@ a {
 }
 
 .surface-card {
-  background-color: var(--color-surface-container-lowest);
-  border: 0;
+  border: 1px solid rgb(114 121 110 / 14%);
   border-radius: 1rem;
+  box-shadow: 0 18px 40px rgb(25 28 26 / 7%);
 }
 
 .surface-panel {
   background-color: var(--color-surface-container-low);
-  border: 0;
+  border: 1px solid rgb(114 121 110 / 10%);
 }
 
 .glass-surface {
-  background-color: rgb(247 250 245 / 80%);
-  backdrop-filter: blur(12px);
+  background-color: rgb(255 255 255 / 70%);
+  border-bottom: 1px solid rgb(114 121 110 / 18%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
 }
 
 .ambient-shadow {
-  box-shadow: 0 20px 20px rgb(25 28 26 / 6%);
+  box-shadow: 0 18px 38px rgb(25 28 26 / 10%);
 }
 
 .grain-overlay {
