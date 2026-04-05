@@ -8,7 +8,7 @@ export default function DashboardPage() {
     useEffect(() => {
         apiClient.probarConexion()
             .then(data => {
-                setMensajeServidor(data.mensaje);
+                setMensajeServidor(data.message);
                 setError(false);
             })
             .catch(() => {
@@ -24,7 +24,6 @@ export default function DashboardPage() {
                 Bienvenido a PDIA. Desde aquí podrás gestionar tus parcelas, cultivos y actividades.
             </p>
 
-            {/* --- BLOQUE DE PRUEBA DE TU BACKEND --- */}
             <div className={`mt-6 p-4 rounded-lg border ${error ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
                 <h2 className={`text-sm font-semibold ${error ? 'text-red-800' : 'text-emerald-800'}`}>
                     Estado de la Conexión:
@@ -33,7 +32,6 @@ export default function DashboardPage() {
                     {mensajeServidor}
                 </p>
             </div>
-            {/* --------------------------------------- */}
         </section>
     )
 }
