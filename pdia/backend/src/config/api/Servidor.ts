@@ -3,14 +3,14 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import pool from "../connection/dbConnetions";
-
+import routerFinca from "../../app/finca/route/RouterFinca";
 
 class Servidor
 {
     public app:Express.Application;
     constructor() {
         this.app= Express();
-        this.app.set("PORT", Number(process.env.PORT) || 3123);
+        this.app.set("PORT", Number(process.env.PORT_B) || 3123);
         this.app.use(helmet());
         this.app.use(cors());
         this.app.use(morgan("dev"));
@@ -20,6 +20,8 @@ class Servidor
         this.app.get("/", (_req, res) => {
             res.status(200).json({ success: true, message: "Servidor iniciado" });
         });
+        this.app.use("/api/finca/", routerFinca);
+
 
     }
 

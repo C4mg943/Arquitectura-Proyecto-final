@@ -1,0 +1,71 @@
+import { Response } from "express";
+import pool from "../../../config/connection/dbConnetions";
+import { SQL_FINCAS } from "../repository/sql_finca";
+import { FincaUpdateDto } from "../model/dto/dtoFinca";
+import { ImpFincaRepository } from "../repository/ImpFincaRepository";
+
+class ServiceFincaActualizar {
+    private static fincaRepo: ImpFincaRepository = new ImpFincaRepository();
+
+    public static async ejecutar(obj: FincaUpdateDto, res: Response): Promise<any> {
+        await pool.task(async (consulta) => {
+            let caso = 1;
+            let resultadoActualizacion: any;
+
+
+            const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [obj.productorId]);
+            if (!existeProductor) {
+                caso = 3;
+                return { caso };
+            }
+
+            const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO_UPDATE, [
+                obj.nombre,
+                obj.productorId,
+                obj.id
+            ]);
+            console.log(obj)
+            // Asegúrate de convertir a número explícitamente
+            if (Number(duplicados.cantidad) > 0) {
+                caso = 1;
+                return { caso };
+            }
+
+
+            caso = 2;
+            resultadoActualizacion = await this.fincaRepo.update(obj);
+
+            return { caso, resultadoActualizacion };
+
+        }).then(({ caso, resultadoActualizacion }) => {
+            switch (caso) {
+                case 1:
+                    res.status(400).json({
+                        respuesta: "Error: Ya tienes otra finca registrada con ese nombre"
+                    });
+                    break;
+                case 2:
+                    if (resultadoActualizacion.rowCount > 0) {
+                        res.status(200).json({
+                            respuesta: "Finca actualizada correctamente",
+                            filasAfectadas: resultadoActualizacion.rowCount
+                        });
+                    } else {
+
+                        res.status(404).json({ respuesta: "Error: La finca no existe" });
+                    }
+                    break;
+                case 3:
+                    res.status(400).json({
+                        respuesta: "Error: El productor especificado no existe"
+                    });
+                    break;
+            }
+        }).catch((miError) => {
+            console.error("Error en ServicioFincaActualizar:", miError);
+            res.status(500).json({ respuesta: "Error interno del servidor al actualizar" });
+        });
+    }
+}
+
+export default ServiceFincaActualizar;
