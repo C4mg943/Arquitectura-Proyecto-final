@@ -6,7 +6,7 @@ import Finca from "../model/finca";
 class ServicioFincaCrear {
     public static async grabarFinca(obj: any, res: Response): Promise<any> {
         
-        // Instancia del modelo con 8 argumentos (sin updatedAt)
+
         const nuevaFinca = new Finca(
             0,
             obj.nombre,
