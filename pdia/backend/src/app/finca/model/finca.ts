@@ -4,8 +4,9 @@ class Finca {
     private _municipio: string;
     private _departamento: string;
     private _productorId: number;
+    private _areaHectareas: number;
+    private _codigoIca: string;
     private _createdAt: Date;
-    private _updatedAt: Date;
 
     constructor(
         id: number,
@@ -13,16 +14,18 @@ class Finca {
         municipio: string,
         departamento: string,
         productorId: number,
-        createdAt: Date,
-        updatedAt: Date
+        areaHectareas: number,
+        codigoIca: string,
+        createdAt: Date
     ) {
         this._id = id;
         this._nombre = nombre;
         this._municipio = municipio;
         this._departamento = departamento;
         this._productorId = productorId;
+        this._areaHectareas = areaHectareas;
+        this._codigoIca = codigoIca;
         this._createdAt = createdAt;
-        this._updatedAt = updatedAt;
     }
 
     // Getters
@@ -46,12 +49,16 @@ class Finca {
         return this._productorId;
     }
 
-    public get createdAt(): Date {
-        return this._createdAt;
+    public get areaHectareas(): number {
+        return this._areaHectareas;
     }
 
-    public get updatedAt(): Date {
-        return this._updatedAt;
+    public get codigoIca(): string {
+        return this._codigoIca;
+    }
+
+    public get createdAt(): Date {
+        return this._createdAt;
     }
 
     // Setters
@@ -75,12 +82,16 @@ class Finca {
         this._productorId = value;
     }
 
-    public set createdAt(value: Date) {
-        this._createdAt = value;
+    public set areaHectareas(value: number) {
+        this._areaHectareas = value;
     }
 
-    public set updatedAt(value: Date) {
-        this._updatedAt = value;
+    public set codigoIca(value: string) {
+        this._codigoIca = value;
+    }
+
+    public set createdAt(value: Date) {
+        this._createdAt = value;
     }
 }
 

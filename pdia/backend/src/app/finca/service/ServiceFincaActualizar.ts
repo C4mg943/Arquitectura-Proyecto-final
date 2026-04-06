@@ -9,16 +9,17 @@ class ServiceFincaActualizar {
     private static fincaRepo: ImpFincaRepository = new ImpFincaRepository();
 
     public static async ejecutar(obj: FincaUpdateDto, res: Response): Promise<any> {
-        
-        // Creamos instancia del modelo a partir del DTO (POO)
+
+        // Creamos instancia del modelo con 8 argumentos (sin updatedAt)
         const fincaActualizar = new Finca(
             obj.id,
             obj.nombre,
             obj.municipio,
             obj.departamento,
             obj.productorId,
-            new Date(),
-            new Date()
+            obj.area_hectareas || 0,
+            obj.codigo_ica || '',
+            new Date() // createdAt temporal
         );
 
         await pool.task(async (consulta) => {
@@ -36,7 +37,7 @@ class ServiceFincaActualizar {
                 fincaActualizar.productorId,
                 fincaActualizar.id
             ]);
-            
+
 
             if (Number(duplicados.cantidad) > 0) {
                 caso = 1;
@@ -44,15 +45,14 @@ class ServiceFincaActualizar {
             }
 
             caso = 2;
-            // Usamos los datos del modelo instanciado para actualizar
             resultadoActualizacion = await this.fincaRepo.update({
                 id: fincaActualizar.id,
                 nombre: fincaActualizar.nombre,
                 municipio: fincaActualizar.municipio,
                 departamento: fincaActualizar.departamento,
                 productorId: fincaActualizar.productorId,
-                area_hectareas: obj.area_hectareas || 0,
-                codigo_ica: obj.codigo_ica || ''
+                area_hectareas: fincaActualizar.areaHectareas,
+                codigo_ica: fincaActualizar.codigoIca
             });
 
             return { caso, resultadoActualizacion };
@@ -73,9 +73,9 @@ class ServiceFincaActualizar {
                             data: { filasAfectadas: resultadoActualizacion.rowCount }
                         });
                     } else {
-                        res.status(404).json({ 
+                        res.status(404).json({
                             success: false,
-                            message: "La finca no existe" 
+                            message: "La finca no existe"
                         });
                     }
                     break;
@@ -88,7 +88,7 @@ class ServiceFincaActualizar {
             }
         }).catch((miError) => {
             console.error("Error en ServicioFincaActualizar:", miError);
-            res.status(500).json({ 
+            res.status(500).json({
                 success: false,
                 message: "Error interno del servidor al actualizar",
                 details: miError.message || miError

@@ -6,14 +6,15 @@ import Finca from "../model/finca";
 class ServicioFincaCrear {
     public static async grabarFinca(obj: any, res: Response): Promise<any> {
         
-        // Creamos instancia del modelo para validar lógica de negocio (POO)
+        // Instancia del modelo con 8 argumentos (sin updatedAt)
         const nuevaFinca = new Finca(
             0,
             obj.nombre,
             obj.municipio,
             obj.departamento,
             obj.productorId,
-            new Date(),
+            obj.area_hectareas || 0,
+            obj.codigo_ica || '',
             new Date()
         );
 
@@ -44,8 +45,8 @@ class ServicioFincaCrear {
                         nuevaFinca.municipio,
                         nuevaFinca.departamento,
                         nuevaFinca.productorId,
-                        obj.area_hectareas || 0,
-                        obj.codigo_ica || ''
+                        nuevaFinca.areaHectareas,
+                        nuevaFinca.codigoIca
                     ]);
                 }
 
