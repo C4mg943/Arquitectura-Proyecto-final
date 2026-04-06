@@ -16,17 +16,19 @@ import WeatherPage from './features/weather/pages/WeatherPage'
 import { AppShell } from './shared/components/layout'
 import FarmsPage from './features/fram/pages/FarmsPage.tsx'
 import FarmWireframe from './features/fram/pages/FarmWireframe.tsx';
+import FarmMockup from './features/fram/pages/FarmMockup.tsx';
+
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Rutas Públicas de siempre */}
+                {/* Rutas Públicas */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* --- BYPASS: Rutas ahora fuera de PrivateRoute --- */}
+                {/* Rutas bajo AppShell */}
                 <Route
                     path="/profile"
                     element={<AppShell><ProfilePage /></AppShell>}
@@ -63,13 +65,10 @@ function App() {
                     path="/fincas"
                     element={<AppShell><FarmsPage /></AppShell>}
                 />
-                <Route path="/fincas" element={<FarmsPage />} />
 
-
-                <Route path="/finca/wireframe" element={<FarmWireframe />} />
-
-                {/* El bloque PrivateRoute ahora está vacío o lo puedes comentar */}
-                {/* <Route element={<PrivateRoute />}></Route> */}
+                {/* Rutas de Prototipo Fincas */}
+                <Route path="/finca/wireframe" element={<AppShell><FarmWireframe /></AppShell>} />
+                <Route path="/finca/mockup" element={<AppShell><FarmMockup /></AppShell>} />
 
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>

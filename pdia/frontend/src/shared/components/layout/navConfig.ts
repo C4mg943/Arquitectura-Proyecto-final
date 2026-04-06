@@ -21,6 +21,7 @@ export const navItems: NavItem[] = [
 
 export const mobileNavItems: NavItem[] = [
   { to: '/parcelas', label: 'Parcelas', icon: 'map' },
+  { to: '/fincas', label: 'Mis Fincas', icon: 'holiday_village' },
   { to: '/cultivos', label: 'Cultivos', icon: 'grass' },
   { to: '/', label: 'Inicio', icon: 'home', end: true },
   { to: '/clima', label: 'Clima', icon: 'cloudy' },

@@ -14,7 +14,10 @@ class ControllerFincaActualizar {
             nombre: req.body.nombre,
             municipio: req.body.municipio,
             departamento: req.body.departamento,
-            productorId: req.body.productorId
+            // Cambiado a productor_id para coincidir con el payload del front
+            productorId: req.body.productor_id,
+            area_hectareas: req.body.area_hectareas || 0,
+            codigo_ica: req.body.codigo_ica || ''
         };
 
 

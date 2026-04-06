@@ -13,7 +13,7 @@ class ServiceFincaBorrar {
             let caso = 0;
             let resultadoEliminacion: any;
 
-            // CASO 1: Verificar si la finca existe antes de intentar borrar
+           
             const existeFinca = await consulta.oneOrNone(SQL_FINCAS.FIND_BY_ID, [obj.id]);
 
             if (!existeFinca) {
@@ -32,7 +32,8 @@ class ServiceFincaBorrar {
             switch (caso) {
                 case 1:
                     res.status(404).json({
-                        respuesta: "Error: No se puede eliminar porque la finca no existe"
+                        success: false,
+                        message: "No se puede eliminar porque la finca no existe"
                     });
                     break;
 
@@ -40,11 +41,15 @@ class ServiceFincaBorrar {
 
                     if (resultadoEliminacion.rowCount > 0) {
                         res.status(200).json({
-                            respuesta: "Finca eliminada correctamente",
-                            filasBorradas: resultadoEliminacion.rowCount
+                            success: true,
+                            message: "Finca eliminada correctamente",
+                            data: { filasBorradas: resultadoEliminacion.rowCount }
                         });
                     } else {
-                        res.status(404).json({ respuesta: "Error inesperado: Finca no encontrada" });
+                        res.status(404).json({ 
+                            success: false,
+                            message: "Finca no encontrada" 
+                        });
                     }
                     break;
 
@@ -53,7 +58,11 @@ class ServiceFincaBorrar {
             }
         }).catch((miError) => {
             console.error("Error en ServiceFincaBorrar:", miError);
-            res.status(500).json({ respuesta: "Error interno del servidor al intentar borrar" });
+            res.status(500).json({ 
+                success: false,
+                message: "Error interno del servidor al intentar borrar",
+                details: miError
+            });
         });
     }
 }

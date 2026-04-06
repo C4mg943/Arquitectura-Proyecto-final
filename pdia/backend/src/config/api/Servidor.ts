@@ -12,7 +12,11 @@ class Servidor
         this.app= Express();
         this.app.set("PORT", Number(process.env.PORT_B) || 3123);
         this.app.use(helmet());
-        this.app.use(cors());
+        this.app.use(cors({
+            origin: '*', // Permite cualquier origen
+            methods: ['GET', 'POST', 'PUT', 'DELETE'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'Bypass-Tunnel-Reminder']
+        }));
         this.app.use(morgan("dev"));
         this.app.use(Express.json({limit:"100mb"}));
         this.app.use(Express.urlencoded({extended:true}));

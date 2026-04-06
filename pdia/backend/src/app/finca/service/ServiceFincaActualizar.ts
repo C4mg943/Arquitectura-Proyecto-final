@@ -24,8 +24,8 @@ class ServiceFincaActualizar {
                 obj.productorId,
                 obj.id
             ]);
-            console.log(obj)
-            // Asegúrate de convertir a número explícitamente
+            
+
             if (Number(duplicados.cantidad) > 0) {
                 caso = 1;
                 return { caso };
@@ -41,29 +41,38 @@ class ServiceFincaActualizar {
             switch (caso) {
                 case 1:
                     res.status(400).json({
-                        respuesta: "Error: Ya tienes otra finca registrada con ese nombre"
+                        success: false,
+                        message: "Ya tienes otra finca registrada con ese nombre"
                     });
                     break;
                 case 2:
                     if (resultadoActualizacion.rowCount > 0) {
                         res.status(200).json({
-                            respuesta: "Finca actualizada correctamente",
-                            filasAfectadas: resultadoActualizacion.rowCount
+                            success: true,
+                            message: "Finca actualizada correctamente",
+                            data: { filasAfectadas: resultadoActualizacion.rowCount }
                         });
                     } else {
-
-                        res.status(404).json({ respuesta: "Error: La finca no existe" });
+                        res.status(404).json({ 
+                            success: false,
+                            message: "La finca no existe" 
+                        });
                     }
                     break;
                 case 3:
                     res.status(400).json({
-                        respuesta: "Error: El productor especificado no existe"
+                        success: false,
+                        message: "El productor especificado no existe"
                     });
                     break;
             }
         }).catch((miError) => {
             console.error("Error en ServicioFincaActualizar:", miError);
-            res.status(500).json({ respuesta: "Error interno del servidor al actualizar" });
+            res.status(500).json({ 
+                success: false,
+                message: "Error interno del servidor al actualizar",
+                details: miError.message || miError
+            });
         });
     }
 }

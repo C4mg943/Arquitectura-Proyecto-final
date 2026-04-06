@@ -1,6 +1,8 @@
 import { useAuthStore, type AuthUser } from '../../store/authStore'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3123'
+const BASE_URL = import.meta.env.VITE_API_URL
+
+
 
 interface ApiEnvelope<T> {
   success: boolean
@@ -8,6 +10,7 @@ interface ApiEnvelope<T> {
   data?: T
   details?: unknown
 }
+
 
 export type CultivoEstado = 'EN_CRECIMIENTO' | 'COSECHADO' | 'AFECTADO'
 export type ActivityType = 'RIEGO' | 'FERTILIZACION' | 'PLAGA' | 'OBSERVACION'
@@ -244,6 +247,7 @@ function toQueryString(params: Record<string, string | number | undefined>): str
 }
 
 export const apiClient = {
+
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
@@ -274,6 +278,13 @@ export const apiClient = {
     create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas', payload),
     update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/parcelas/${id}`),
+  },
+
+  fincas: {
+    list: () => apiClient.get<any[]>('/api/finca/getAll'),
+    create: (payload: any) => apiClient.post<any>('/api/finca/create', payload),
+    update: (id: number, payload: any) => apiClient.put<any>(`/api/finca/update/${id}`, payload),
+    delete: (id: number) => apiClient.delete<void>(`/api/finca/delete/${id}`),
   },
 
   cultivos: {
@@ -310,4 +321,5 @@ export const apiClient = {
     fertilizaciones: (cultivoId: number) =>
       apiClient.get<ReporteActividadesDto>(`/api/reportes/fertilizaciones/${cultivoId}`),
   },
+
 }
