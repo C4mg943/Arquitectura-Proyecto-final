@@ -14,7 +14,7 @@ import {
     type UpdatePasswordDto,
     type UpdateProfileDto
 } from "../model/dto/AuthDto";
-import { User, UserRole } from "../model/User";
+import { User, UserRoles, UserRole } from "../model/User";
 import { AppError } from "../../../middleware/AppError";
 
 export class AuthService {
@@ -37,14 +37,19 @@ export class AuthService {
         }
 
         const passwordHash = await bcrypt.hash(payload.password, 10);
-        const role: UserRole = payload.rol ?? "PRODUCTOR";
+        const role: UserRole = payload.rol ?? UserRoles.PRODUCTOR;
+        if (role === UserRoles.OPERARIO) {
+            throw new AppError("El registro de operarios debe hacerse desde el módulo de operarios", 403);
+        }
+        const productorId = payload.productorId ?? null;
 
         const createdUser = await this.repository.create({
             nombre: payload.nombre,
             identificacion: payload.identificacion,
             email: payload.email,
             passwordHash,
-            rol: role
+            rol: role,
+            productorId
         });
 
         const token = this.buildToken(createdUser);
@@ -186,7 +191,8 @@ export class AuthService {
             nombre: user.getNombre(),
             identificacion: user.getIdentificacion(),
             email: user.getEmail(),
-            rol: user.getRol()
+            rol: user.getRol(),
+            productorId: user.getProductorId()
         };
     }
 

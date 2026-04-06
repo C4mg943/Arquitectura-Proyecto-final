@@ -3,11 +3,12 @@ import { param } from "express-validator";
 import { ReporteController } from "../controller/ReporteController";
 import { RequireAuth } from "../../../middleware/AuthMiddleware";
 import { ValidateRequest } from "../../../middleware/ValidationMiddleware";
+import { RequireRoles } from "../../../middleware/RoleMiddleware";
 
 const reporteRouter = Router();
 const reporteController = new ReporteController();
 
-reporteRouter.use(RequireAuth);
+reporteRouter.use(RequireAuth, RequireRoles(["PRODUCTOR", "OPERARIO"]));
 
 reporteRouter.get(
     "/actividades/:cultivoId",

@@ -3,11 +3,12 @@ import { body, param, query } from "express-validator";
 import { CultivoController } from "../controller/CultivoController";
 import { RequireAuth } from "../../../middleware/AuthMiddleware";
 import { ValidateRequest } from "../../../middleware/ValidationMiddleware";
+import { RequireRoles } from "../../../middleware/RoleMiddleware";
 
 const cultivoRouter = Router();
 const cultivoController = new CultivoController();
 
-cultivoRouter.use(RequireAuth);
+cultivoRouter.use(RequireAuth, RequireRoles(["PRODUCTOR", "OPERARIO"]));
 
 cultivoRouter.get(
     "/",
@@ -29,6 +30,7 @@ cultivoRouter.get(
 
 cultivoRouter.post(
     "/",
+    RequireRoles(["PRODUCTOR"]),
     [
         body("tipoCultivo").isString().trim().notEmpty().isLength({ min: 2, max: 120 }),
         body("fechaSiembra").isISO8601(),
@@ -42,6 +44,7 @@ cultivoRouter.post(
 
 cultivoRouter.put(
     "/:id",
+    RequireRoles(["PRODUCTOR"]),
     [
         param("id").isInt({ min: 1 }),
         body("tipoCultivo").optional().isString().trim().notEmpty().isLength({ min: 2, max: 120 }),
@@ -55,6 +58,7 @@ cultivoRouter.put(
 
 cultivoRouter.delete(
     "/:id",
+    RequireRoles(["PRODUCTOR"]),
     [
         param("id").isInt({ min: 1 }),
         ValidateRequest

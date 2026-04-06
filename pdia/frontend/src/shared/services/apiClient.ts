@@ -12,6 +12,7 @@ interface ApiEnvelope<T> {
 export type CultivoEstado = 'EN_CRECIMIENTO' | 'COSECHADO' | 'AFECTADO'
 export type ActivityType = 'RIEGO' | 'FERTILIZACION' | 'PLAGA' | 'OBSERVACION'
 export type AlertType = 'LLUVIA' | 'TEMPERATURA_ALTA' | 'TEMPERATURA_BAJA' | 'VIENTO'
+export type TipoFinca = 'AGRICOLA' | 'GANADERA' | 'MIXTA' | 'FORESTAL'
 
 export interface AuthResponse {
   token: string
@@ -63,7 +64,7 @@ export interface ParcelaDto {
   hectareas: number
   latitud: number
   longitud: number
-  productorId: number
+  fincaId: number
 }
 
 export interface CreateParcelaPayload {
@@ -72,6 +73,7 @@ export interface CreateParcelaPayload {
   hectareas: number
   latitud: number
   longitud: number
+  fincaId: number
 }
 
 export interface UpdateParcelaPayload {
@@ -80,6 +82,72 @@ export interface UpdateParcelaPayload {
   hectareas?: number
   latitud?: number
   longitud?: number
+  fincaId?: number
+}
+
+export interface FincaDto {
+  id: number
+  nombre: string
+  ubicacion: string
+  descripcion: string | null
+  area: number
+  tipoFinca: TipoFinca
+  fechaRegistro: string
+  codigoIcaInvima: string | null
+  propietarioId: number
+}
+
+export interface CreateFincaPayload {
+  nombre: string
+  ubicacion: string
+  descripcion?: string
+  area: number
+  tipoFinca: TipoFinca
+  fechaRegistro?: string
+  codigoIcaInvima?: string
+}
+
+export interface UpdateFincaPayload {
+  nombre?: string
+  ubicacion?: string
+  descripcion?: string
+  area?: number
+  tipoFinca?: TipoFinca
+  fechaRegistro?: string
+  codigoIcaInvima?: string
+}
+
+export interface RegisterOperarioPayload {
+  nombre: string
+  identificacion: string
+  email: string
+  password: string
+}
+
+export interface AsignarOperarioPayload {
+  operarioId: number
+  parcelaId: number
+}
+
+export interface ParcelaAsignadaDto {
+  id: number
+  nombre: string
+  municipio: string
+  hectareas: number
+  fincaId: number
+}
+
+export interface OperarioConParcelasDto {
+  operario: AuthUser
+  parcelas: ParcelaAsignadaDto[]
+}
+
+export interface AsignacionOperarioDto {
+  id: number
+  operarioId: number
+  parcelaId: number
+  asignadoPorId: number
+  fechaAsignacion: string
 }
 
 export interface CultivoDto {
@@ -274,6 +342,23 @@ export const apiClient = {
     create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas', payload),
     update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/parcelas/${id}`),
+  },
+
+  fincas: {
+    list: () => apiClient.get<FincaDto[]>('/api/fincas'),
+    findOne: (id: number) => apiClient.get<FincaDto>(`/api/fincas/${id}`),
+    create: (payload: CreateFincaPayload) => apiClient.post<FincaDto>('/api/fincas', payload),
+    update: (id: number, payload: UpdateFincaPayload) => apiClient.put<FincaDto>(`/api/fincas/${id}`, payload),
+    delete: (id: number) => apiClient.delete<void>(`/api/fincas/${id}`),
+  },
+
+  operarios: {
+    list: () => apiClient.get<OperarioConParcelasDto[]>('/api/operarios'),
+    register: (payload: RegisterOperarioPayload) => apiClient.post<AuthUser>('/api/operarios', payload),
+    assign: (payload: AsignarOperarioPayload) =>
+      apiClient.post<AsignacionOperarioDto>('/api/operarios/asignaciones', payload),
+    unassign: (operarioId: number, parcelaId: number) =>
+      apiClient.delete<void>(`/api/operarios/asignaciones/${operarioId}/${parcelaId}`),
   },
 
   cultivos: {

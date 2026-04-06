@@ -14,7 +14,7 @@ authRouter.post(
         body("identificacion").isString().trim().notEmpty().isLength({ min: 5, max: 30 }),
         body("email").isEmail().normalizeEmail(),
         body("password").isString().isLength({ min: 6, max: 64 }),
-        body("rol").optional().isIn(["PRODUCTOR", "OPERARIO", "TECNICO", "ADMINISTRADOR"]),
+        body("rol").optional().isIn(["PRODUCTOR", "TECNICO", "ADMINISTRADOR"]),
         ValidateRequest
     ],
     authController.register

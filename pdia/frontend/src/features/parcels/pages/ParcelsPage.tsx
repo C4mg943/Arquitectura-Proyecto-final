@@ -4,10 +4,12 @@ import {
   apiClient,
   ApiClientError,
   type CreateParcelaPayload,
+  type FincaDto,
   type ParcelaDto,
   type UpdateParcelaPayload,
 } from '../../../shared/services/apiClient'
 import { Badge, Button, Card, Input, ParcelForm } from '../../../shared/components/common'
+import { useAuthStore } from '../../../store/authStore'
 
 function formatHectareas(total: number): string {
   return total.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
@@ -26,7 +28,10 @@ function getStatus(parcela: ParcelaDto): { variant: 'safe' | 'warning' | 'danger
 }
 
 export default function ParcelsPage() {
+  const user = useAuthStore((state) => state.user)
+  const canManageParcelas = user?.rol === 'PRODUCTOR'
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
+  const [fincas, setFincas] = useState<FincaDto[]>([])
   const [filter, setFilter] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -39,8 +44,12 @@ export default function ParcelsPage() {
     setError(null)
 
     try {
-      const response = await apiClient.parcelas.list()
-      setParcelas(response)
+      const [parcelasResponse, fincasResponse] = await Promise.all([
+        apiClient.parcelas.list(),
+        canManageParcelas ? apiClient.fincas.list() : Promise.resolve([] as FincaDto[]),
+      ])
+      setParcelas(parcelasResponse)
+      setFincas(fincasResponse)
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
         setError(unknownError.message)
@@ -50,7 +59,7 @@ export default function ParcelsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [canManageParcelas])
 
   useEffect(() => {
     void loadParcelas()
@@ -72,7 +81,17 @@ export default function ParcelsPage() {
     [parcelas],
   )
 
+  const heading = canManageParcelas ? 'Inventario de Parcelas' : 'Mis Parcelas Asignadas'
+  const subtitle = canManageParcelas
+    ? 'Gestiona tus activos agrícolas y monitorea rendimiento en todas las ubicaciones registradas.'
+    : 'Consulta las parcelas que tienes asignadas y registra actividades en sus cultivos.'
+
   const openCreate = () => {
+    if (canManageParcelas && fincas.length === 0) {
+      setError('Debes crear al menos una finca antes de registrar parcelas.')
+      return
+    }
+
     setEditing(null)
     setIsFormOpen(true)
   }
@@ -92,6 +111,11 @@ export default function ParcelsPage() {
   }
 
   const handleSave = async (payload: CreateParcelaPayload) => {
+    if (!canManageParcelas) {
+      setError('Solo los productores pueden crear o editar parcelas.')
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -119,6 +143,11 @@ export default function ParcelsPage() {
   }
 
   const handleDelete = async (parcela: ParcelaDto) => {
+    if (!canManageParcelas) {
+      setError('Solo los productores pueden eliminar parcelas.')
+      return
+    }
+
     const confirmed = window.confirm(`¿Deseas eliminar la parcela "${parcela.nombre}"?`)
     if (!confirmed) {
       return
@@ -141,14 +170,14 @@ export default function ParcelsPage() {
     <section className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-headline-md text-on-primary-fixed-variant">Inventario de Parcelas</h1>
-          <p className="mt-1 max-w-2xl text-on-surface-variant">
-            Gestiona tus activos agrícolas y monitorea rendimiento en todas las ubicaciones registradas.
-          </p>
+          <h1 className="text-headline-md text-on-primary-fixed-variant">{heading}</h1>
+          <p className="mt-1 max-w-2xl text-on-surface-variant">{subtitle}</p>
         </div>
-        <Button leadingIcon="add_circle" onClick={openCreate} variant="primary">
-          Añadir Parcela
-        </Button>
+        {canManageParcelas ? (
+          <Button leadingIcon="add_circle" onClick={openCreate} variant="primary">
+            Añadir Parcela
+          </Button>
+        ) : null}
       </header>
 
       {error ? (
@@ -216,29 +245,36 @@ export default function ParcelsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button className="flex-1" onClick={() => openEdit(parcel)} variant="tertiary">
-                    Editar
-                  </Button>
-                  <button
-                    aria-label={`Eliminar ${parcel.nombre}`}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
-                    onClick={() => {
-                      void handleDelete(parcel)
-                    }}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
+                {canManageParcelas ? (
+                  <p className="text-xs text-on-surface-variant">Finca #{parcel.fincaId}</p>
+                ) : null}
+
+                {canManageParcelas ? (
+                  <div className="flex items-center gap-2">
+                    <Button className="flex-1" onClick={() => openEdit(parcel)} variant="tertiary">
+                      Editar
+                    </Button>
+                    <button
+                      aria-label={`Eliminar ${parcel.nombre}`}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
+                      onClick={() => {
+                        void handleDelete(parcel)
+                      }}
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </Card>
           )
         })}
       </div>
 
-      {isFormOpen ? (
+      {isFormOpen && canManageParcelas ? (
         <ParcelForm
+          fincas={fincas}
           initialValue={editing}
           isSubmitting={isSubmitting}
           mode={editing ? 'edit' : 'create'}

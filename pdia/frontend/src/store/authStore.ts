@@ -8,6 +8,7 @@ export interface AuthUser {
   identificacion: string
   email: string
   rol: UserRole
+  productorId: number | null
 }
 
 interface AuthState {

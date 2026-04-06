@@ -3,11 +3,12 @@ import { body, param } from "express-validator";
 import { AlertaController } from "../controller/AlertaController";
 import { RequireAuth } from "../../../middleware/AuthMiddleware";
 import { ValidateRequest } from "../../../middleware/ValidationMiddleware";
+import { RequireRoles } from "../../../middleware/RoleMiddleware";
 
 const alertaRouter = Router();
 const alertaController = new AlertaController();
 
-alertaRouter.use(RequireAuth);
+alertaRouter.use(RequireAuth, RequireRoles(["PRODUCTOR", "OPERARIO"]));
 
 alertaRouter.get("/", alertaController.list);
 
@@ -31,6 +32,7 @@ alertaRouter.get(
 
 alertaRouter.post(
     "/",
+    RequireRoles(["PRODUCTOR", "ADMINISTRADOR"]),
     [
         body("tipo").isIn(["LLUVIA", "TEMPERATURA_ALTA", "TEMPERATURA_BAJA", "VIENTO"]),
         body("valorDetectado").isFloat(),
@@ -43,6 +45,7 @@ alertaRouter.post(
 
 alertaRouter.delete(
     "/:id",
+    RequireRoles(["PRODUCTOR", "ADMINISTRADOR"]),
     [
         param("id").isInt({ min: 1 }),
         ValidateRequest

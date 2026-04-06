@@ -16,7 +16,7 @@ export class ActividadController {
                 throw new AppError("No autorizado", 401);
             }
 
-            const response = await this.service.create(req.authUser.userId, req.body);
+            const response = await this.service.create(req.authUser.userId, req.authUser.rol, req.body);
             ApiResponse.created(res, "Actividad creada correctamente", response);
         } catch (error) {
             next(error);
@@ -29,7 +29,7 @@ export class ActividadController {
                 throw new AppError("No autorizado", 401);
             }
 
-            const response = await this.service.list(req.authUser.userId);
+            const response = await this.service.list(req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Actividades obtenidas correctamente", response);
         } catch (error) {
             next(error);
@@ -43,7 +43,10 @@ export class ActividadController {
             }
 
             const cultivoId = Number(req.params.cultivoId);
-            const response = await this.service.listByCultivo(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.listByCultivo(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Actividades por cultivo obtenidas correctamente", response);
         } catch (error) {
             next(error);
@@ -57,7 +60,10 @@ export class ActividadController {
             }
 
             const actividadId = Number(req.params.id);
-            const response = await this.service.findOne(actividadId, req.authUser.userId);
+            if (!Number.isInteger(actividadId) || actividadId < 1) {
+                throw new AppError("Id de actividad inválido", 400);
+            }
+            const response = await this.service.findOne(actividadId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Actividad obtenida correctamente", response);
         } catch (error) {
             next(error);
@@ -71,7 +77,10 @@ export class ActividadController {
             }
 
             const actividadId = Number(req.params.id);
-            const response = await this.service.update(actividadId, req.authUser.userId, req.body);
+            if (!Number.isInteger(actividadId) || actividadId < 1) {
+                throw new AppError("Id de actividad inválido", 400);
+            }
+            const response = await this.service.update(actividadId, req.authUser.userId, req.authUser.rol, req.body);
             ApiResponse.ok(res, "Actividad actualizada correctamente", response);
         } catch (error) {
             next(error);
@@ -85,7 +94,10 @@ export class ActividadController {
             }
 
             const actividadId = Number(req.params.id);
-            await this.service.delete(actividadId, req.authUser.userId);
+            if (!Number.isInteger(actividadId) || actividadId < 1) {
+                throw new AppError("Id de actividad inválido", 400);
+            }
+            await this.service.delete(actividadId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Actividad eliminada correctamente");
         } catch (error) {
             next(error);

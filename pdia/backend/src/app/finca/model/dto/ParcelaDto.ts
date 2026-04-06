@@ -4,6 +4,7 @@ export interface CreateParcelaDto {
     hectareas: number;
     latitud: number;
     longitud: number;
+    fincaId: number;
 }
 
 export interface UpdateParcelaDto {
@@ -12,6 +13,7 @@ export interface UpdateParcelaDto {
     hectareas?: number;
     latitud?: number;
     longitud?: number;
+    fincaId?: number;
 }
 
 export interface ParcelaResponseDto {
@@ -21,5 +23,5 @@ export interface ParcelaResponseDto {
     hectareas: number;
     latitud: number;
     longitud: number;
-    productorId: number;
+    fincaId: number;
 }

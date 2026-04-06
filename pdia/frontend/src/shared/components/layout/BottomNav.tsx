@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import { cn } from '../../utils/classNames'
 import { mobileNavItems } from './navConfig'
+import { useAuthStore } from '../../../store/authStore'
 
 function navLinkClass(isActive: boolean): string {
   return cn(
@@ -13,10 +14,24 @@ function navLinkClass(isActive: boolean): string {
 }
 
 export default function BottomNav() {
+  const role = useAuthStore((state) => state.user?.rol)
+
+  const visibleItems = mobileNavItems.filter((item) => {
+    if (!item.roles || item.roles.length === 0) {
+      return true
+    }
+
+    if (!role) {
+      return false
+    }
+
+    return item.roles.includes(role)
+  })
+
   return (
     <nav className="glass-surface fixed inset-x-0 bottom-0 z-50 border-t border-outline-variant/40 px-4 pb-6 pt-2 lg:hidden">
       <ul className="mx-auto flex max-w-3xl items-center justify-around gap-1">
-        {mobileNavItems.map((item) => (
+        {visibleItems.map((item) => (
           <li key={item.label}>
             <NavLink className={({ isActive }) => navLinkClass(isActive)} end={item.end} to={item.to}>
               <span className="material-symbols-outlined text-lg">{item.icon}</span>

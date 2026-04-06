@@ -8,6 +8,7 @@ interface RegisterUserPersistence {
     email: string;
     passwordHash: string;
     rol: UserRole;
+    productorId: number | null;
 }
 
 interface UserRow {
@@ -17,6 +18,7 @@ interface UserRow {
     email: string;
     passwordHash: string;
     rol: UserRole;
+    productorId: number | null;
     failedAttempts: number;
     lockedUntil: string | null;
     createdAt: string;
@@ -41,6 +43,7 @@ export class AuthRepository {
             email: row.email,
             passwordHash: row.passwordHash,
             rol: row.rol,
+            productorId: row.productorId,
             failedAttempts: row.failedAttempts ?? 0,
             lockedUntil: row.lockedUntil ? new Date(row.lockedUntil) : null,
             createdAt: new Date(row.createdAt),
@@ -58,6 +61,7 @@ export class AuthRepository {
                 email,
                 password_hash AS "passwordHash",
                 rol,
+                productor_id AS "productorId",
                 failed_attempts AS "failedAttempts",
                 locked_until AS "lockedUntil",
                 created_at AS "createdAt",
@@ -79,6 +83,7 @@ export class AuthRepository {
                 email,
                 password_hash AS "passwordHash",
                 rol,
+                productor_id AS "productorId",
                 failed_attempts AS "failedAttempts",
                 locked_until AS "lockedUntil",
                 created_at AS "createdAt",
@@ -99,9 +104,10 @@ export class AuthRepository {
                 email,
                 password_hash,
                 rol,
+                productor_id,
                 failed_attempts,
                 locked_until
-            ) VALUES ($1, $2, $3, $4, $5, 0, NULL)
+            ) VALUES ($1, $2, $3, $4, $5, $6, 0, NULL)
             RETURNING
                 id,
                 nombre,
@@ -109,6 +115,7 @@ export class AuthRepository {
                 email,
                 password_hash AS "passwordHash",
                 rol,
+                productor_id AS "productorId",
                 failed_attempts AS "failedAttempts",
                 locked_until AS "lockedUntil",
                 created_at AS "createdAt",
@@ -120,7 +127,8 @@ export class AuthRepository {
             payload.identificacion,
             payload.email,
             payload.passwordHash,
-            payload.rol
+            payload.rol,
+            payload.productorId
         ]);
         return this.mapUser(row);
     }
@@ -172,6 +180,7 @@ export class AuthRepository {
                 email,
                 password_hash AS "passwordHash",
                 rol,
+                productor_id AS "productorId",
                 failed_attempts AS "failedAttempts",
                 locked_until AS "lockedUntil",
                 created_at AS "createdAt",

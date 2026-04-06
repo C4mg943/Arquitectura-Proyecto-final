@@ -13,8 +13,9 @@ interface CultivoRow {
     updatedAt: string;
 }
 
-interface ParcelaOwnershipRow {
+interface ParcelOwnershipRow {
     id: number;
+    propietarioId: number;
 }
 
 export class CultivoRepository {
@@ -32,10 +33,39 @@ export class CultivoRepository {
         return new Cultivo(data);
     }
 
-    public async parcelaBelongsToProductor(parcelaId: number, productorId: number): Promise<boolean> {
-        const row = await pool.oneOrNone<ParcelaOwnershipRow>(
-            "SELECT id FROM parcelas WHERE id = $1 AND productor_id = $2 LIMIT 1",
-            [parcelaId, productorId]
+    public async findParcelaOwnership(parcelaId: number): Promise<{ parcelaId: number; propietarioId: number; } | null> {
+        const row = await pool.oneOrNone<ParcelOwnershipRow>(
+            `
+            SELECT
+                p.id,
+                f.propietario_id AS "propietarioId"
+            FROM parcelas p
+            INNER JOIN fincas f ON f.id = p.finca_id
+            WHERE p.id = $1
+            LIMIT 1
+            `,
+            [parcelaId]
+        );
+        if (!row) {
+            return null;
+        }
+        return {
+            parcelaId: row.id,
+            propietarioId: row.propietarioId
+        };
+    }
+
+    public async parcelaBelongsToOperario(parcelaId: number, operarioId: number): Promise<boolean> {
+        const row = await pool.oneOrNone<{ id: number }>(
+            `
+            SELECT p.id
+            FROM parcelas p
+            INNER JOIN asignacion_operarios ao ON ao.parcela_id = p.id
+            WHERE p.id = $1
+              AND ao.operario_id = $2
+            LIMIT 1
+            `,
+            [parcelaId, operarioId]
         );
         return Boolean(row);
     }
@@ -70,7 +100,7 @@ export class CultivoRepository {
         return this.map(row);
     }
 
-    public async listByProductor(productorId: number): Promise<Cultivo[]> {
+    public async listByPropietario(propietarioId: number): Promise<Cultivo[]> {
         const query = `
             SELECT
                 c.id,
@@ -83,14 +113,15 @@ export class CultivoRepository {
                 c.updated_at AS "updatedAt"
             FROM cultivos c
             INNER JOIN parcelas p ON p.id = c.parcela_id
-            WHERE p.productor_id = $1
+            INNER JOIN fincas f ON f.id = p.finca_id
+            WHERE f.propietario_id = $1
             ORDER BY c.id DESC;
         `;
-        const rows = await pool.manyOrNone<CultivoRow>(query, [productorId]);
+        const rows = await pool.manyOrNone<CultivoRow>(query, [propietarioId]);
         return rows.map((row) => this.map(row));
     }
 
-    public async searchByTipo(productorId: number, tipoCultivo: string): Promise<Cultivo[]> {
+    public async listByOperario(operarioId: number): Promise<Cultivo[]> {
         const query = `
             SELECT
                 c.id,
@@ -103,15 +134,37 @@ export class CultivoRepository {
                 c.updated_at AS "updatedAt"
             FROM cultivos c
             INNER JOIN parcelas p ON p.id = c.parcela_id
-            WHERE p.productor_id = $1
+            INNER JOIN asignacion_operarios ao ON ao.parcela_id = p.id
+            WHERE ao.operario_id = $1
+            ORDER BY c.id DESC;
+        `;
+        const rows = await pool.manyOrNone<CultivoRow>(query, [operarioId]);
+        return rows.map((row) => this.map(row));
+    }
+
+    public async searchByTipoPropietario(propietarioId: number, tipoCultivo: string): Promise<Cultivo[]> {
+        const query = `
+            SELECT
+                c.id,
+                c.tipo_cultivo AS "tipoCultivo",
+                c.fecha_siembra AS "fechaSiembra",
+                c.estado,
+                c.observaciones,
+                c.parcela_id AS "parcelaId",
+                c.created_at AS "createdAt",
+                c.updated_at AS "updatedAt"
+            FROM cultivos c
+            INNER JOIN parcelas p ON p.id = c.parcela_id
+            INNER JOIN fincas f ON f.id = p.finca_id
+            WHERE f.propietario_id = $1
               AND LOWER(c.tipo_cultivo) LIKE LOWER($2)
             ORDER BY c.id DESC;
         `;
-        const rows = await pool.manyOrNone<CultivoRow>(query, [productorId, `%${tipoCultivo}%`]);
+        const rows = await pool.manyOrNone<CultivoRow>(query, [propietarioId, `%${tipoCultivo}%`]);
         return rows.map((row) => this.map(row));
     }
 
-    public async findByIdAndProductor(id: number, productorId: number): Promise<Cultivo | null> {
+    public async searchByTipoOperario(operarioId: number, tipoCultivo: string): Promise<Cultivo[]> {
         const query = `
             SELECT
                 c.id,
@@ -124,17 +177,62 @@ export class CultivoRepository {
                 c.updated_at AS "updatedAt"
             FROM cultivos c
             INNER JOIN parcelas p ON p.id = c.parcela_id
+            INNER JOIN asignacion_operarios ao ON ao.parcela_id = p.id
+            WHERE ao.operario_id = $1
+              AND LOWER(c.tipo_cultivo) LIKE LOWER($2)
+            ORDER BY c.id DESC;
+        `;
+        const rows = await pool.manyOrNone<CultivoRow>(query, [operarioId, `%${tipoCultivo}%`]);
+        return rows.map((row) => this.map(row));
+    }
+
+    public async findByIdAndPropietario(id: number, propietarioId: number): Promise<Cultivo | null> {
+        const query = `
+            SELECT
+                c.id,
+                c.tipo_cultivo AS "tipoCultivo",
+                c.fecha_siembra AS "fechaSiembra",
+                c.estado,
+                c.observaciones,
+                c.parcela_id AS "parcelaId",
+                c.created_at AS "createdAt",
+                c.updated_at AS "updatedAt"
+            FROM cultivos c
+            INNER JOIN parcelas p ON p.id = c.parcela_id
+            INNER JOIN fincas f ON f.id = p.finca_id
             WHERE c.id = $1
-              AND p.productor_id = $2
+              AND f.propietario_id = $2
             LIMIT 1;
         `;
-        const row = await pool.oneOrNone<CultivoRow>(query, [id, productorId]);
+        const row = await pool.oneOrNone<CultivoRow>(query, [id, propietarioId]);
         return row ? this.map(row) : null;
     }
 
-    public async update(id: number, productorId: number, payload: UpdateCultivoDto): Promise<Cultivo | null> {
+    public async findByIdAndOperario(id: number, operarioId: number): Promise<Cultivo | null> {
+        const query = `
+            SELECT
+                c.id,
+                c.tipo_cultivo AS "tipoCultivo",
+                c.fecha_siembra AS "fechaSiembra",
+                c.estado,
+                c.observaciones,
+                c.parcela_id AS "parcelaId",
+                c.created_at AS "createdAt",
+                c.updated_at AS "updatedAt"
+            FROM cultivos c
+            INNER JOIN parcelas p ON p.id = c.parcela_id
+            INNER JOIN asignacion_operarios ao ON ao.parcela_id = p.id
+            WHERE c.id = $1
+              AND ao.operario_id = $2
+            LIMIT 1;
+        `;
+        const row = await pool.oneOrNone<CultivoRow>(query, [id, operarioId]);
+        return row ? this.map(row) : null;
+    }
+
+    public async updateByPropietario(id: number, propietarioId: number, payload: UpdateCultivoDto): Promise<Cultivo | null> {
         const fields: string[] = [];
-        const values: unknown[] = [id, productorId];
+        const values: unknown[] = [id, propietarioId];
 
         if (payload.tipoCultivo !== undefined) {
             fields.push(`tipo_cultivo = $${values.length + 1}`);
@@ -154,17 +252,18 @@ export class CultivoRepository {
         }
 
         if (fields.length === 0) {
-            return this.findByIdAndProductor(id, productorId);
+            return this.findByIdAndPropietario(id, propietarioId);
         }
 
         const query = `
             UPDATE cultivos c
             SET ${fields.join(", ")},
                 updated_at = NOW()
-            FROM parcelas p
+            FROM parcelas p, fincas f
             WHERE c.id = $1
               AND p.id = c.parcela_id
-              AND p.productor_id = $2
+              AND f.id = p.finca_id
+              AND f.propietario_id = $2
             RETURNING
                 c.id,
                 c.tipo_cultivo AS "tipoCultivo",
@@ -179,16 +278,80 @@ export class CultivoRepository {
         return row ? this.map(row) : null;
     }
 
-    public async delete(id: number, productorId: number): Promise<boolean> {
+    public async updateByOperario(id: number, operarioId: number, payload: UpdateCultivoDto): Promise<Cultivo | null> {
+        const fields: string[] = [];
+        const values: unknown[] = [id, operarioId];
+
+        if (payload.tipoCultivo !== undefined) {
+            fields.push(`tipo_cultivo = $${values.length + 1}`);
+            values.push(payload.tipoCultivo);
+        }
+        if (payload.fechaSiembra !== undefined) {
+            fields.push(`fecha_siembra = $${values.length + 1}`);
+            values.push(payload.fechaSiembra);
+        }
+        if (payload.estado !== undefined) {
+            fields.push(`estado = $${values.length + 1}`);
+            values.push(payload.estado);
+        }
+        if (payload.observaciones !== undefined) {
+            fields.push(`observaciones = $${values.length + 1}`);
+            values.push(payload.observaciones);
+        }
+
+        if (fields.length === 0) {
+            return this.findByIdAndOperario(id, operarioId);
+        }
+
+        const query = `
+            UPDATE cultivos c
+            SET ${fields.join(", ")},
+                updated_at = NOW()
+            FROM parcelas p, asignacion_operarios ao
+            WHERE c.id = $1
+              AND p.id = c.parcela_id
+              AND ao.parcela_id = p.id
+              AND ao.operario_id = $2
+            RETURNING
+                c.id,
+                c.tipo_cultivo AS "tipoCultivo",
+                c.fecha_siembra AS "fechaSiembra",
+                c.estado,
+                c.observaciones,
+                c.parcela_id AS "parcelaId",
+                c.created_at AS "createdAt",
+                c.updated_at AS "updatedAt";
+        `;
+        const row = await pool.oneOrNone<CultivoRow>(query, values);
+        return row ? this.map(row) : null;
+    }
+
+    public async deleteByPropietario(id: number, propietarioId: number): Promise<boolean> {
         const result = await pool.result(
             `
             DELETE FROM cultivos c
-            USING parcelas p
+            USING parcelas p, fincas f
             WHERE c.id = $1
               AND p.id = c.parcela_id
-              AND p.productor_id = $2
+              AND f.id = p.finca_id
+              AND f.propietario_id = $2
             `,
-            [id, productorId]
+            [id, propietarioId]
+        );
+        return result.rowCount > 0;
+    }
+
+    public async deleteByOperario(id: number, operarioId: number): Promise<boolean> {
+        const result = await pool.result(
+            `
+            DELETE FROM cultivos c
+            USING parcelas p, asignacion_operarios ao
+            WHERE c.id = $1
+              AND p.id = c.parcela_id
+              AND ao.parcela_id = p.id
+              AND ao.operario_id = $2
+            `,
+            [id, operarioId]
         );
         return result.rowCount > 0;
     }

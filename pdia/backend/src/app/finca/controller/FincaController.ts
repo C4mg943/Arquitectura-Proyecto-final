@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { ApiResponse } from "../../../config/api/ApiResponse";
 import { AppError } from "../../../middleware/AppError";
-import { ParcelaService } from "../service/ParcelaService";
+import { FincaService } from "../service/FincaService";
 
-export class ParcelaController {
-    private service: ParcelaService;
+export class FincaController {
+    private readonly service: FincaService;
 
     constructor() {
-        this.service = new ParcelaService();
+        this.service = new FincaService();
     }
 
     public create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -15,8 +15,9 @@ export class ParcelaController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
+
             const response = await this.service.create(req.authUser.userId, req.authUser.rol, req.body);
-            ApiResponse.created(res, "Parcela creada correctamente", response);
+            ApiResponse.created(res, "Finca creada correctamente", response);
         } catch (error) {
             next(error);
         }
@@ -27,8 +28,9 @@ export class ParcelaController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
+
             const response = await this.service.list(req.authUser.userId, req.authUser.rol);
-            ApiResponse.ok(res, "Parcelas obtenidas correctamente", response);
+            ApiResponse.ok(res, "Fincas obtenidas correctamente", response);
         } catch (error) {
             next(error);
         }
@@ -39,12 +41,10 @@ export class ParcelaController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
-            const parcelaId = Number(req.params.id);
-            if (!Number.isInteger(parcelaId) || parcelaId < 1) {
-                throw new AppError("Id de parcela inválido", 400);
-            }
-            const response = await this.service.findOne(parcelaId, req.authUser.userId, req.authUser.rol);
-            ApiResponse.ok(res, "Parcela obtenida correctamente", response);
+
+            const fincaId = Number(req.params.id);
+            const response = await this.service.findOne(fincaId, req.authUser.userId, req.authUser.rol);
+            ApiResponse.ok(res, "Finca obtenida correctamente", response);
         } catch (error) {
             next(error);
         }
@@ -55,12 +55,10 @@ export class ParcelaController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
-            const parcelaId = Number(req.params.id);
-            if (!Number.isInteger(parcelaId) || parcelaId < 1) {
-                throw new AppError("Id de parcela inválido", 400);
-            }
-            const response = await this.service.update(parcelaId, req.authUser.userId, req.authUser.rol, req.body);
-            ApiResponse.ok(res, "Parcela actualizada correctamente", response);
+
+            const fincaId = Number(req.params.id);
+            const response = await this.service.update(fincaId, req.authUser.userId, req.authUser.rol, req.body);
+            ApiResponse.ok(res, "Finca actualizada correctamente", response);
         } catch (error) {
             next(error);
         }
@@ -71,12 +69,10 @@ export class ParcelaController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
-            const parcelaId = Number(req.params.id);
-            if (!Number.isInteger(parcelaId) || parcelaId < 1) {
-                throw new AppError("Id de parcela inválido", 400);
-            }
-            await this.service.delete(parcelaId, req.authUser.userId, req.authUser.rol);
-            ApiResponse.ok(res, "Parcela eliminada correctamente");
+
+            const fincaId = Number(req.params.id);
+            await this.service.delete(fincaId, req.authUser.userId, req.authUser.rol);
+            ApiResponse.ok(res, "Finca eliminada correctamente");
         } catch (error) {
             next(error);
         }

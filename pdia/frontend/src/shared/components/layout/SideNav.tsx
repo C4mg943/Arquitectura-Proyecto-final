@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import { cn } from '../../utils/classNames'
 import { navItems } from './navConfig'
+import { useAuthStore } from '../../../store/authStore'
 
 function navLinkClass(isActive: boolean): string {
   return cn(
@@ -13,6 +14,20 @@ function navLinkClass(isActive: boolean): string {
 }
 
 export default function SideNav() {
+  const role = useAuthStore((state) => state.user?.rol)
+
+  const visibleItems = navItems.filter((item) => {
+    if (!item.roles || item.roles.length === 0) {
+      return true
+    }
+
+    if (!role) {
+      return false
+    }
+
+    return item.roles.includes(role)
+  })
+
   return (
     <aside className="surface-panel fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-outline-variant/45 p-4 lg:flex lg:flex-col">
       <div className="mb-8 mt-20 px-2">
@@ -21,7 +36,7 @@ export default function SideNav() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.label}
             className={({ isActive }) => navLinkClass(isActive)}

@@ -17,7 +17,10 @@ export class ReporteController {
             }
 
             const cultivoId = Number(req.params.cultivoId);
-            const response = await this.service.reporteActividades(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.reporteActividades(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Reporte de actividades generado correctamente", response);
         } catch (error) {
             next(error);
@@ -31,7 +34,10 @@ export class ReporteController {
             }
 
             const cultivoId = Number(req.params.cultivoId);
-            const csv = await this.service.generarCsvActividades(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const csv = await this.service.generarCsvActividades(cultivoId, req.authUser.userId, req.authUser.rol);
 
             res.setHeader("Content-Type", "text/csv; charset=utf-8");
             res.setHeader("Content-Disposition", `attachment; filename="reporte-actividades-cultivo-${cultivoId}.csv"`);
@@ -48,7 +54,10 @@ export class ReporteController {
             }
 
             const cultivoId = Number(req.params.cultivoId);
-            const response = await this.service.reporteRiegos(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.reporteRiegos(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Reporte de riegos generado correctamente", response);
         } catch (error) {
             next(error);
@@ -62,7 +71,10 @@ export class ReporteController {
             }
 
             const cultivoId = Number(req.params.cultivoId);
-            const response = await this.service.reporteFertilizaciones(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.reporteFertilizaciones(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Reporte de fertilizaciones generado correctamente", response);
         } catch (error) {
             next(error);

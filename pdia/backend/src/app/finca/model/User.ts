@@ -1,4 +1,11 @@
-export type UserRole = "PRODUCTOR" | "OPERARIO" | "TECNICO" | "ADMINISTRADOR";
+export const UserRoles = {
+    PRODUCTOR: "PRODUCTOR",
+    OPERARIO: "OPERARIO",
+    TECNICO: "TECNICO",
+    ADMINISTRADOR: "ADMINISTRADOR"
+} as const;
+
+export type UserRole = typeof UserRoles[keyof typeof UserRoles];
 
 export interface UserPersistence {
     id: number;
@@ -7,6 +14,7 @@ export interface UserPersistence {
     email: string;
     passwordHash: string;
     rol: UserRole;
+    productorId: number | null;
     failedAttempts: number;
     lockedUntil: Date | null;
     createdAt: Date;
@@ -20,6 +28,7 @@ export class User {
     private email: string;
     private passwordHash: string;
     private rol: UserRole;
+    private productorId: number | null;
     private failedAttempts: number;
     private lockedUntil: Date | null;
     private createdAt: Date;
@@ -32,6 +41,7 @@ export class User {
         this.email = data.email;
         this.passwordHash = data.passwordHash;
         this.rol = data.rol;
+        this.productorId = data.productorId;
         this.failedAttempts = data.failedAttempts;
         this.lockedUntil = data.lockedUntil;
         this.createdAt = data.createdAt;
@@ -44,6 +54,7 @@ export class User {
     public getEmail(): string { return this.email; }
     public getPasswordHash(): string { return this.passwordHash; }
     public getRol(): UserRole { return this.rol; }
+    public getProductorId(): number | null { return this.productorId; }
     public getFailedAttempts(): number { return this.failedAttempts; }
     public getLockedUntil(): Date | null { return this.lockedUntil; }
     public getCreatedAt(): Date { return this.createdAt; }

@@ -1,4 +1,5 @@
 import { AppError } from "../../../middleware/AppError";
+import { UserRoles } from "../model/User";
 import type { Actividad } from "../model/Actividad";
 import type { ActividadResponseDto, CreateActividadDto, UpdateActividadDto } from "../model/dto/ActividadDto";
 import { ActividadRepository } from "../repository/ActividadRepository";
@@ -10,28 +11,58 @@ export class ActividadService {
         this.repository = new ActividadRepository();
     }
 
-    public async create(userId: number, payload: CreateActividadDto): Promise<ActividadResponseDto> {
-        const cultivoValido = await this.repository.cultivoBelongsToProductor(payload.cultivoId, userId);
-        if (!cultivoValido) {
-            throw new AppError("El cultivo no existe o no pertenece al productor", 404);
+    public async create(userId: number, rol: string, payload: CreateActividadDto): Promise<ActividadResponseDto> {
+        const cultivoAccess = await this.repository.findCultivoAccess(payload.cultivoId);
+        if (!cultivoAccess) {
+            throw new AppError("El cultivo no existe", 404);
+        }
+
+        if (rol === UserRoles.PRODUCTOR) {
+            if (cultivoAccess.propietarioId !== userId) {
+                throw new AppError("El cultivo no existe o no pertenece al productor", 404);
+            }
+        } else if (rol === UserRoles.OPERARIO) {
+            const asignado = await this.repository.operarioTieneAsignacion(userId, cultivoAccess.parcelaId);
+            if (!asignado) {
+                throw new AppError("No tienes acceso a la parcela de este cultivo", 403);
+            }
+        } else {
+            throw new AppError("Rol no autorizado para registrar actividades", 403);
         }
 
         const actividad = await this.repository.create(userId, payload);
         return this.toDto(actividad);
     }
 
-    public async list(userId: number): Promise<ActividadResponseDto[]> {
-        const actividades = await this.repository.listByProductor(userId);
+    public async list(userId: number, rol: string): Promise<ActividadResponseDto[]> {
+        let actividades: Actividad[] = [];
+
+        if (rol === UserRoles.PRODUCTOR) {
+            actividades = await this.repository.listByPropietario(userId);
+        } else if (rol === UserRoles.OPERARIO) {
+            actividades = await this.repository.listByOperario(userId);
+        }
+
         return actividades.map((actividad) => this.toDto(actividad));
     }
 
-    public async listByCultivo(cultivoId: number, userId: number): Promise<ActividadResponseDto[]> {
-        const actividades = await this.repository.listByCultivo(cultivoId, userId);
+    public async listByCultivo(cultivoId: number, userId: number, rol: string): Promise<ActividadResponseDto[]> {
+        let actividades: Actividad[] = [];
+
+        if (rol === UserRoles.PRODUCTOR) {
+            actividades = await this.repository.listByCultivoPropietario(cultivoId, userId);
+        } else if (rol === UserRoles.OPERARIO) {
+            actividades = await this.repository.listByCultivoOperario(cultivoId, userId);
+        }
+
         return actividades.map((actividad) => this.toDto(actividad));
     }
 
-    public async findOne(id: number, userId: number): Promise<ActividadResponseDto> {
-        const actividad = await this.repository.findByIdAndProductor(id, userId);
+    public async findOne(id: number, userId: number, rol: string): Promise<ActividadResponseDto> {
+        const actividad = rol === UserRoles.OPERARIO
+            ? await this.repository.findByIdAndOperario(id, userId)
+            : await this.repository.findByIdAndPropietario(id, userId);
+
         if (!actividad) {
             throw new AppError("Actividad no encontrada", 404);
         }
@@ -39,8 +70,11 @@ export class ActividadService {
         return this.toDto(actividad);
     }
 
-    public async update(id: number, userId: number, payload: UpdateActividadDto): Promise<ActividadResponseDto> {
-        const actividad = await this.repository.update(id, userId, payload);
+    public async update(id: number, userId: number, rol: string, payload: UpdateActividadDto): Promise<ActividadResponseDto> {
+        const actividad = rol === UserRoles.OPERARIO
+            ? await this.repository.updateByOperario(id, userId, payload)
+            : await this.repository.updateByPropietario(id, userId, payload);
+
         if (!actividad) {
             throw new AppError("Actividad no encontrada", 404);
         }
@@ -48,8 +82,11 @@ export class ActividadService {
         return this.toDto(actividad);
     }
 
-    public async delete(id: number, userId: number): Promise<void> {
-        const deleted = await this.repository.delete(id, userId);
+    public async delete(id: number, userId: number, rol: string): Promise<void> {
+        const deleted = rol === UserRoles.OPERARIO
+            ? await this.repository.deleteByOperario(id, userId)
+            : await this.repository.deleteByPropietario(id, userId);
+
         if (!deleted) {
             throw new AppError("Actividad no encontrada", 404);
         }

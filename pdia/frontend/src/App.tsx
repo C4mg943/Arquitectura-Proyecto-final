@@ -9,7 +9,9 @@ import ActivitiesPage from './features/activities/pages/ActivitiesPage'
 import AlertsPage from './features/alerts/pages/AlertsPage'
 import DashboardPage from './features/dashboard/pages/DashboardPage'
 import CropsPage from './features/crops/pages/CropsPage'
+import FincasPage from './features/fincas/pages/FincasPage'
 import NotFoundPage from './features/not-found/pages/NotFoundPage'
+import OperariosPage from './features/operarios/pages/OperariosPage'
 import ParcelsPage from './features/parcels/pages/ParcelsPage'
 import ReportsPage from './features/reports/pages/ReportsPage'
 import WeatherPage from './features/weather/pages/WeatherPage'
@@ -43,7 +45,23 @@ function App() {
             }
           />
           <Route
+            path="/fincas"
+            element={
+              <AppShell>
+                <FincasPage />
+              </AppShell>
+            }
+          />
+          <Route
             path="/parcelas"
+            element={
+              <AppShell>
+                <ParcelsPage />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/mis-parcelas"
             element={
               <AppShell>
                 <ParcelsPage />
@@ -55,6 +73,14 @@ function App() {
             element={
               <AppShell>
                 <CropsPage />
+              </AppShell>
+            }
+          />
+          <Route
+            path="/operarios"
+            element={
+              <AppShell>
+                <OperariosPage />
               </AppShell>
             }
           />

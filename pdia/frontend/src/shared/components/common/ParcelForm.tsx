@@ -1,6 +1,6 @@
 import { type FormEvent, useMemo, useState } from 'react'
 
-import type { CreateParcelaPayload, ParcelaDto } from '../../services/apiClient'
+import type { CreateParcelaPayload, FincaDto, ParcelaDto } from '../../services/apiClient'
 import { parcelaSchema } from '../../utils/validators'
 import Button from './Button'
 import Input from './Input'
@@ -9,6 +9,7 @@ type ParcelFormMode = 'create' | 'edit'
 
 interface ParcelFormProps {
   mode: ParcelFormMode
+  fincas: FincaDto[]
   initialValue?: ParcelaDto | null
   isSubmitting: boolean
   onSubmit: (payload: CreateParcelaPayload) => Promise<void>
@@ -21,6 +22,7 @@ interface ParcelFormState {
   hectareas: string
   latitud: string
   longitud: string
+  fincaId: string
 }
 
 const initialState: ParcelFormState = {
@@ -29,9 +31,10 @@ const initialState: ParcelFormState = {
   hectareas: '',
   latitud: '',
   longitud: '',
+  fincaId: '',
 }
 
-export default function ParcelForm({ mode, initialValue, isSubmitting, onSubmit, onCancel }: ParcelFormProps) {
+export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, onSubmit, onCancel }: ParcelFormProps) {
   const seedForm = useMemo<ParcelFormState>(() => {
     if (mode === 'edit' && initialValue) {
       return {
@@ -40,11 +43,19 @@ export default function ParcelForm({ mode, initialValue, isSubmitting, onSubmit,
         hectareas: String(initialValue.hectareas),
         latitud: String(initialValue.latitud),
         longitud: String(initialValue.longitud),
+        fincaId: String(initialValue.fincaId),
+      }
+    }
+
+    if (mode === 'create' && fincas.length > 0) {
+      return {
+        ...initialState,
+        fincaId: String(fincas[0].id),
       }
     }
 
     return initialState
-  }, [mode, initialValue])
+  }, [fincas, mode, initialValue])
 
   const [form, setForm] = useState<ParcelFormState>(seedForm)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +70,7 @@ export default function ParcelForm({ mode, initialValue, isSubmitting, onSubmit,
       hectareas: Number(form.hectareas),
       latitud: Number(form.latitud),
       longitud: Number(form.longitud),
+      fincaId: Number(form.fincaId),
     }
 
     const parsed = parcelaSchema.safeParse(payload)
@@ -128,6 +140,23 @@ export default function ParcelForm({ mode, initialValue, isSubmitting, onSubmit,
               type="number"
               value={form.longitud}
             />
+
+            <label className="space-y-2 md:col-span-2" htmlFor="parcel-finca">
+              <span className="text-label-md block text-on-surface-variant">Finca</span>
+              <select
+                id="parcel-finca"
+                className="w-full rounded-2xl border border-outline-variant/45 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+                onChange={(event) => setForm((current) => ({ ...current, fincaId: event.target.value }))}
+                value={form.fincaId}
+              >
+                <option value="">Selecciona una finca</option>
+                {fincas.map((finca) => (
+                  <option key={finca.id} value={finca.id}>
+                    {finca.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           {error ? (

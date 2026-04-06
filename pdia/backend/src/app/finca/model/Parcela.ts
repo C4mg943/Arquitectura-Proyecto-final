@@ -5,7 +5,7 @@ export interface ParcelaPersistence {
     hectareas: number;
     latitud: number;
     longitud: number;
-    productorId: number;
+    fincaId: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,7 +17,7 @@ export class Parcela {
     private hectareas: number;
     private latitud: number;
     private longitud: number;
-    private productorId: number;
+    private fincaId: number;
     private createdAt: Date;
     private updatedAt: Date;
 
@@ -28,7 +28,7 @@ export class Parcela {
         this.hectareas = data.hectareas;
         this.latitud = data.latitud;
         this.longitud = data.longitud;
-        this.productorId = data.productorId;
+        this.fincaId = data.fincaId;
         this.createdAt = data.createdAt;
         this.updatedAt = data.updatedAt;
     }
@@ -39,7 +39,7 @@ export class Parcela {
     public getHectareas(): number { return this.hectareas; }
     public getLatitud(): number { return this.latitud; }
     public getLongitud(): number { return this.longitud; }
-    public getProductorId(): number { return this.productorId; }
+    public getFincaId(): number { return this.fincaId; }
     public getCreatedAt(): Date { return this.createdAt; }
     public getUpdatedAt(): Date { return this.updatedAt; }
 }

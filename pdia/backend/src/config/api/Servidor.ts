@@ -10,6 +10,8 @@ import cultivoRouter from "../../app/finca/route/CultivoRoutes";
 import actividadRouter from "../../app/finca/route/ActividadRoutes";
 import alertaRouter from "../../app/finca/route/AlertaRoutes";
 import reporteRouter from "../../app/finca/route/ReporteRoutes";
+import fincaRouter from "../../app/finca/route/FincaRoutes";
+import operarioRouter from "../../app/finca/route/OperarioRoutes";
 import { ErrorHandler } from "../../middleware/ErrorHandler";
 
 class Servidor
@@ -34,6 +36,8 @@ class Servidor
         this.app.use("/api/actividades", actividadRouter);
         this.app.use("/api/alertas", alertaRouter);
         this.app.use("/api/reportes", reporteRouter);
+        this.app.use("/api/fincas", fincaRouter);
+        this.app.use("/api/operarios", operarioRouter);
         this.app.use(ErrorHandler);
 
     }

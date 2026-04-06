@@ -22,6 +22,7 @@ export const parcelaSchema = z.object({
   hectareas: z.number().positive('Las hectáreas deben ser mayores a 0'),
   latitud: z.number().min(-90, 'Latitud mínima -90').max(90, 'Latitud máxima 90'),
   longitud: z.number().min(-180, 'Longitud mínima -180').max(180, 'Longitud máxima 180'),
+  fincaId: z.number().int().positive('Debes seleccionar una finca'),
 })
 
 export type ParcelaInput = z.infer<typeof parcelaSchema>
@@ -45,6 +46,27 @@ export const actividadSchema = z.object({
 })
 
 export type ActividadInput = z.infer<typeof actividadSchema>
+
+export const fincaSchema = z.object({
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  ubicacion: z.string().min(2, 'La ubicación debe tener al menos 2 caracteres'),
+  descripcion: z.string().max(1500, 'Máximo 1500 caracteres').optional(),
+  area: z.number().positive('El área debe ser mayor a 0'),
+  tipoFinca: z.enum(['AGRICOLA', 'GANADERA', 'MIXTA', 'FORESTAL']),
+  fechaRegistro: z.string().min(1, 'La fecha de registro es obligatoria'),
+  codigoIcaInvima: z.string().min(3, 'Código ICA/INVIMA inválido').max(80, 'Máximo 80 caracteres').optional(),
+})
+
+export type FincaInput = z.infer<typeof fincaSchema>
+
+export const operarioSchema = z.object({
+  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
+  identificacion: z.string().min(5, 'La identificación debe tener al menos 5 caracteres'),
+  email: z.string().email('Correo inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+})
+
+export type OperarioInput = z.infer<typeof operarioSchema>
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Correo inválido'),

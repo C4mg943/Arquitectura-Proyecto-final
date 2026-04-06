@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { ApiResponse } from "../../../config/api/ApiResponse";
 import { AuthService } from "../service/AuthService";
 import { AppError } from "../../../middleware/AppError";
+import { UserRoles } from "../model/User";
 
 export class AuthController {
     private service: AuthService;
@@ -12,6 +13,9 @@ export class AuthController {
 
     public register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
+            if (req.body?.rol === UserRoles.OPERARIO) {
+                throw new AppError("El registro de operarios debe hacerse desde el módulo de operarios", 403);
+            }
             const response = await this.service.register(req.body);
             ApiResponse.created(res, "Usuario registrado correctamente", response);
         } catch (error) {

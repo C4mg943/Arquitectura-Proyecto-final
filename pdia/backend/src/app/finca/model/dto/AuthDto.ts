@@ -6,6 +6,7 @@ export interface RegisterUserDto {
     email: string;
     password: string;
     rol?: UserRole;
+    productorId?: number;
 }
 
 export interface LoginDto {
@@ -19,6 +20,7 @@ export interface PublicUserDto {
     identificacion: string;
     email: string;
     rol: UserRole;
+    productorId: number | null;
 }
 
 export interface AuthResponseDto {

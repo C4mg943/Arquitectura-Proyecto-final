@@ -10,8 +10,10 @@ interface DateRangeRow {
     hasta: string | null;
 }
 
-interface CultivoOwnershipRow {
-    id: number;
+interface CultivoAccessRow {
+    cultivoId: number;
+    propietarioId: number;
+    parcelaId: number;
 }
 
 export interface RawActividadRow {
@@ -23,17 +25,43 @@ export interface RawActividadRow {
 }
 
 export class ReporteRepository {
-    public async cultivoBelongsToProductor(cultivoId: number, productorId: number): Promise<boolean> {
-        const row = await pool.oneOrNone<CultivoOwnershipRow>(
+    public async findCultivoAccess(cultivoId: number): Promise<{ cultivoId: number; propietarioId: number; parcelaId: number; } | null> {
+        const row = await pool.oneOrNone<CultivoAccessRow>(
             `
-            SELECT c.id
+            SELECT
+                c.id AS "cultivoId",
+                f.propietario_id AS "propietarioId",
+                p.id AS "parcelaId"
             FROM cultivos c
             INNER JOIN parcelas p ON p.id = c.parcela_id
+            INNER JOIN fincas f ON f.id = p.finca_id
             WHERE c.id = $1
-              AND p.productor_id = $2
             LIMIT 1;
             `,
-            [cultivoId, productorId]
+            [cultivoId]
+        );
+
+        if (!row) {
+            return null;
+        }
+
+        return {
+            cultivoId: row.cultivoId,
+            propietarioId: row.propietarioId,
+            parcelaId: row.parcelaId
+        };
+    }
+
+    public async operarioTieneAsignacion(operarioId: number, parcelaId: number): Promise<boolean> {
+        const row = await pool.oneOrNone<{ id: number }>(
+            `
+            SELECT id
+            FROM asignacion_operarios
+            WHERE operario_id = $1
+              AND parcela_id = $2
+            LIMIT 1;
+            `,
+            [operarioId, parcelaId]
         );
 
         return Boolean(row);

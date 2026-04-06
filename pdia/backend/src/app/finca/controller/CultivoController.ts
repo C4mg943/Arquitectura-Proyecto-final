@@ -15,7 +15,7 @@ export class CultivoController {
             if (!req.authUser) {
                 throw new AppError("No autorizado", 401);
             }
-            const response = await this.service.create(req.authUser.userId, req.body);
+            const response = await this.service.create(req.authUser.userId, req.authUser.rol, req.body);
             ApiResponse.created(res, "Cultivo creado correctamente", response);
         } catch (error) {
             next(error);
@@ -28,7 +28,7 @@ export class CultivoController {
                 throw new AppError("No autorizado", 401);
             }
             const tipoCultivo = req.query.tipoCultivo ? String(req.query.tipoCultivo) : undefined;
-            const response = await this.service.list(req.authUser.userId, tipoCultivo);
+            const response = await this.service.list(req.authUser.userId, req.authUser.rol, tipoCultivo);
             ApiResponse.ok(res, "Cultivos obtenidos correctamente", response);
         } catch (error) {
             next(error);
@@ -41,7 +41,10 @@ export class CultivoController {
                 throw new AppError("No autorizado", 401);
             }
             const cultivoId = Number(req.params.id);
-            const response = await this.service.findOne(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.findOne(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Cultivo obtenido correctamente", response);
         } catch (error) {
             next(error);
@@ -54,7 +57,10 @@ export class CultivoController {
                 throw new AppError("No autorizado", 401);
             }
             const cultivoId = Number(req.params.id);
-            const response = await this.service.update(cultivoId, req.authUser.userId, req.body);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            const response = await this.service.update(cultivoId, req.authUser.userId, req.authUser.rol, req.body);
             ApiResponse.ok(res, "Cultivo actualizado correctamente", response);
         } catch (error) {
             next(error);
@@ -67,7 +73,10 @@ export class CultivoController {
                 throw new AppError("No autorizado", 401);
             }
             const cultivoId = Number(req.params.id);
-            await this.service.delete(cultivoId, req.authUser.userId);
+            if (!Number.isInteger(cultivoId) || cultivoId < 1) {
+                throw new AppError("Id de cultivo inválido", 400);
+            }
+            await this.service.delete(cultivoId, req.authUser.userId, req.authUser.rol);
             ApiResponse.ok(res, "Cultivo eliminado correctamente");
         } catch (error) {
             next(error);

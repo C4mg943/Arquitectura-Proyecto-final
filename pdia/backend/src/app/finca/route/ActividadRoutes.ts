@@ -3,11 +3,12 @@ import { body, param } from "express-validator";
 import { ActividadController } from "../controller/ActividadController";
 import { RequireAuth } from "../../../middleware/AuthMiddleware";
 import { ValidateRequest } from "../../../middleware/ValidationMiddleware";
+import { RequireRoles } from "../../../middleware/RoleMiddleware";
 
 const actividadRouter = Router();
 const actividadController = new ActividadController();
 
-actividadRouter.use(RequireAuth);
+actividadRouter.use(RequireAuth, RequireRoles(["PRODUCTOR", "OPERARIO"]));
 
 actividadRouter.get("/", actividadController.list);
 

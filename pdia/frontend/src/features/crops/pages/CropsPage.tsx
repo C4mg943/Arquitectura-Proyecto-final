@@ -9,6 +9,7 @@ import {
   type UpdateCultivoPayload,
 } from '../../../shared/services/apiClient'
 import { Badge, Button, Card, CropForm, Input } from '../../../shared/components/common'
+import { useAuthStore } from '../../../store/authStore'
 
 function mapEstadoToLabel(estado: CultivoDto['estado']): string {
   if (estado === 'EN_CRECIMIENTO') {
@@ -35,6 +36,8 @@ function mapEstadoToBadge(estado: CultivoDto['estado']): 'safe' | 'warning' | 'd
 }
 
 export default function CropsPage() {
+  const user = useAuthStore((state) => state.user)
+  const canManageCrops = user?.rol === 'PRODUCTOR'
   const [crops, setCrops] = useState<CultivoDto[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [search, setSearch] = useState('')
@@ -113,6 +116,11 @@ export default function CropsPage() {
   }
 
   const handleSave = async (payload: CreateCultivoPayload) => {
+    if (!canManageCrops) {
+      setError('Solo los productores pueden crear o editar cultivos.')
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -145,6 +153,11 @@ export default function CropsPage() {
   }
 
   const handleDelete = async (crop: CultivoDto) => {
+    if (!canManageCrops) {
+      setError('Solo los productores pueden eliminar cultivos.')
+      return
+    }
+
     const confirmed = window.confirm(`¿Deseas eliminar el cultivo "${crop.tipoCultivo}"?`)
     if (!confirmed) {
       return
@@ -172,9 +185,11 @@ export default function CropsPage() {
             Administra tus cultivos, monitorea su estado de crecimiento y planifica la producción.
           </p>
         </div>
-        <Button leadingIcon="add_circle" onClick={openCreate} variant="primary">
-          Nuevo Cultivo
-        </Button>
+        {canManageCrops ? (
+          <Button leadingIcon="add_circle" onClick={openCreate} variant="primary">
+            Nuevo Cultivo
+          </Button>
+        ) : null}
       </header>
 
       {error ? (
@@ -281,24 +296,26 @@ export default function CropsPage() {
 
             {crop.observaciones ? <p className="mt-4 text-xs text-on-surface-variant">{crop.observaciones}</p> : null}
 
-            <div className="mt-4 flex items-center gap-2">
-              <Button className="flex-1" onClick={() => openEdit(crop)} variant="tertiary">Editar</Button>
-              <button
-                aria-label={`Eliminar ${crop.tipoCultivo}`}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95 transition-colors"
-                onClick={() => {
-                  void handleDelete(crop)
-                }}
-                type="button"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
-              </button>
-            </div>
+            {canManageCrops ? (
+              <div className="mt-4 flex items-center gap-2">
+                <Button className="flex-1" onClick={() => openEdit(crop)} variant="tertiary">Editar</Button>
+                <button
+                  aria-label={`Eliminar ${crop.tipoCultivo}`}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95 transition-colors"
+                  onClick={() => {
+                    void handleDelete(crop)
+                  }}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
+                </button>
+              </div>
+            ) : null}
           </Card>
         ))}
       </div>
 
-      {isFormOpen ? (
+      {isFormOpen && canManageCrops ? (
         <CropForm
           initialValue={editing}
           isSubmitting={isSubmitting}

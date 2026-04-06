@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Badge, Button, Card } from '../../../shared/components/common'
 import { apiClient, ApiClientError, type ActividadDto, type CreateActividadPayload, type CultivoDto } from '../../../shared/services/apiClient'
+import { useAuthStore } from '../../../store/authStore'
 
 const activityMeta: Record<ActividadDto['tipo'], { icon: string; color: string; iconBg: string; label: string }> = {
   RIEGO: { icon: 'water_drop', color: 'text-tertiary', iconBg: 'bg-tertiary-container', label: 'Riego' },
@@ -11,6 +12,7 @@ const activityMeta: Record<ActividadDto['tipo'], { icon: string; color: string; 
 }
 
 export default function ActivitiesPage() {
+  const user = useAuthStore((state) => state.user)
   const [activities, setActivities] = useState<ActividadDto[]>([])
   const [crops, setCrops] = useState<CultivoDto[]>([])
   const [tipoFilter, setTipoFilter] = useState<'TODAS' | ActividadDto['tipo']>('TODAS')
@@ -99,7 +101,9 @@ export default function ActivitiesPage() {
       <header>
         <h1 className="text-headline-md text-on-primary-fixed-variant">Historial de Actividades</h1>
         <p className="mt-1 max-w-2xl text-on-surface-variant">
-          Seguimiento detallado de operaciones de campo y gestión de cultivos.
+          {user?.rol === 'OPERARIO'
+            ? 'Registra y consulta actividades sobre los cultivos de tus parcelas asignadas.'
+            : 'Seguimiento detallado de operaciones de campo y gestión de cultivos.'}
         </p>
       </header>
 
