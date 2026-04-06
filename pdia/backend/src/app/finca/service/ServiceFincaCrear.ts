@@ -1,17 +1,29 @@
 import { Response } from "express";
 import pool from "../../../config/connection/dbConnetions";
 import { SQL_FINCAS } from "../repository/sql_finca";
+import Finca from "../model/finca";
 
 class ServicioFincaCrear {
     public static async grabarFinca(obj: any, res: Response): Promise<any> {
+        
+        // Creamos instancia del modelo para validar lógica de negocio (POO)
+        const nuevaFinca = new Finca(
+            0,
+            obj.nombre,
+            obj.municipio,
+            obj.departamento,
+            obj.productorId,
+            new Date(),
+            new Date()
+        );
+
         await pool
             .task(async (consulta) => {
                 let caso = 1;
                 let objGrabado: any;
 
-
                 const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [
-                    obj.productorId,
+                    nuevaFinca.productorId,
                 ]);
 
                 if (!existeProductor) {
@@ -20,18 +32,18 @@ class ServicioFincaCrear {
                 }
                
                 const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO, [
-                    obj.nombre,
-                    obj.municipio,
-                    obj.productorId,
+                    nuevaFinca.nombre,
+                    nuevaFinca.municipio,
+                    nuevaFinca.productorId,
                 ]);
 
                 if (Number(duplicados.cantidad) === 0) {
                     caso = 2;
                     objGrabado = await consulta.one(SQL_FINCAS.ADD, [
-                        obj.nombre,
-                        obj.municipio,
-                        obj.departamento,
-                        obj.productorId,
+                        nuevaFinca.nombre,
+                        nuevaFinca.municipio,
+                        nuevaFinca.departamento,
+                        nuevaFinca.productorId,
                         obj.area_hectareas || 0,
                         obj.codigo_ica || ''
                     ]);
@@ -50,7 +62,7 @@ class ServicioFincaCrear {
                     case 2:
                         res.status(200).json({
                             success: true,
-                            message: "Finca creada correctamente",
+                            message: "Finca creada correctamente (Model Logic)",
                             data: { idFinca: objGrabado.id }
                         });
                         break;

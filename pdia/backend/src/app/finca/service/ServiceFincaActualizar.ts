@@ -3,26 +3,38 @@ import pool from "../../../config/connection/dbConnetions";
 import { SQL_FINCAS } from "../repository/sql_finca";
 import { FincaUpdateDto } from "../model/dto/dtoFinca";
 import { ImpFincaRepository } from "../repository/ImpFincaRepository";
+import Finca from "../model/finca";
 
 class ServiceFincaActualizar {
     private static fincaRepo: ImpFincaRepository = new ImpFincaRepository();
 
     public static async ejecutar(obj: FincaUpdateDto, res: Response): Promise<any> {
+        
+        // Creamos instancia del modelo a partir del DTO (POO)
+        const fincaActualizar = new Finca(
+            obj.id,
+            obj.nombre,
+            obj.municipio,
+            obj.departamento,
+            obj.productorId,
+            new Date(),
+            new Date()
+        );
+
         await pool.task(async (consulta) => {
             let caso = 1;
             let resultadoActualizacion: any;
 
-
-            const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [obj.productorId]);
+            const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [fincaActualizar.productorId]);
             if (!existeProductor) {
                 caso = 3;
                 return { caso };
             }
 
             const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO_UPDATE, [
-                obj.nombre,
-                obj.productorId,
-                obj.id
+                fincaActualizar.nombre,
+                fincaActualizar.productorId,
+                fincaActualizar.id
             ]);
             
 
@@ -31,9 +43,17 @@ class ServiceFincaActualizar {
                 return { caso };
             }
 
-
             caso = 2;
-            resultadoActualizacion = await this.fincaRepo.update(obj);
+            // Usamos los datos del modelo instanciado para actualizar
+            resultadoActualizacion = await this.fincaRepo.update({
+                id: fincaActualizar.id,
+                nombre: fincaActualizar.nombre,
+                municipio: fincaActualizar.municipio,
+                departamento: fincaActualizar.departamento,
+                productorId: fincaActualizar.productorId,
+                area_hectareas: obj.area_hectareas || 0,
+                codigo_ica: obj.codigo_ica || ''
+            });
 
             return { caso, resultadoActualizacion };
 
@@ -49,7 +69,7 @@ class ServiceFincaActualizar {
                     if (resultadoActualizacion.rowCount > 0) {
                         res.status(200).json({
                             success: true,
-                            message: "Finca actualizada correctamente",
+                            message: "Finca actualizada correctamente (Model Logic)",
                             data: { filasAfectadas: resultadoActualizacion.rowCount }
                         });
                     } else {
