@@ -13,8 +13,6 @@ class ServiceFincaConsultar {
         try {
             const datos = await this.fincaRepo.getAll();
 
-            // Aquí podrías aplicar lógica de negocio extra,
-            // como filtrar fincas inactivas o formatear fechas.
 
             return datos;
         } catch (miError) {
