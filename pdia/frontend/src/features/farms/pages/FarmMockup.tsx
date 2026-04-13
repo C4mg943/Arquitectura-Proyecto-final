@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { apiClient } from '../../../shared/services/apiClient.ts'
+import {apiClient, type FincaDto} from '../../../shared/services/apiClient.ts'
 import { useAuthStore } from '../../../store/authStore'
 
 const PlusIcon = () => (
@@ -15,12 +15,11 @@ const MagnifyingGlassIcon = ({ className }: { className?: string }) => (
 );
 
 export default function FarmMockup() {
-    const [fincas, setFincas] = useState<any[]>([]);
+    const [fincas, setFincas] = useState<FincaDto[]>([]);
     const [busqueda, setBusqueda] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const user = useAuthStore(state => state.user);
-
+    useAuthStore(state => state.user);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -55,13 +54,13 @@ export default function FarmMockup() {
 
     const manejarEnvio = async (e: React.FormEvent) => {
         e.preventDefault();
-        const idDelProductor = user?.id || 1;
+        const idDelProductor = 1;
 
         const payload = {
             nombre: formData.nombre,
             municipio: formData.municipio,
             departamento: formData.departamento,
-            productorId: idDelProductor,
+            productor_id: idDelProductor,
             area_hectareas: Number(formData.areaHectareas) || 0,
             // Enviamos vacío si no hay código, para que no cuente como activo
             codigo_ica: formData.codigoIca.trim()
@@ -101,8 +100,8 @@ export default function FarmMockup() {
             nombre: finca.nombre,
             municipio: finca.municipio,
             departamento: finca.departamento,
-            areaHectareas: finca.area_hectareas || finca.areaHectareas || '',
-            codigoIca: finca.codigo_ica || finca.codigoIca || ''
+            areaHectareas:finca.areaHectareas || '',
+            codigoIca:finca.codigoIca || ''
         });
         setIsEditing(true);
         setIsFormOpen(true);
@@ -125,9 +124,9 @@ export default function FarmMockup() {
     };
 
     // Lógica de Códigos ICA Activos: Solo cuenta si el campo tiene texto y no es solo espacios
-    const areaTotal = fincas.reduce((acc, f) => acc + (Number(f.area_hectareas || f.areaHectareas) || 0), 0);
+    const areaTotal = fincas.reduce((acc, f) => acc + (Number(f.areaHectareas) || 0), 0);
     const fincasConIca = fincas.filter(f => {
-        const val = (f.codigo_ica || f.codigoIca || "").trim();
+        const val = (f.codigoIca || f.codigoIca || "").trim();
         return val !== "" && val !== "---" && val !== "Pendiente";
     }).length;
 

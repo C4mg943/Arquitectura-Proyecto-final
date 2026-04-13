@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { apiClient } from '../../../shared/services/apiClient.ts'
+import {apiClient,type FincaDto} from '../../../shared/services/apiClient.ts'
 import { useAuthStore } from '../../../store/authStore'
 
 export default function FarmWireframe() {
-    const [fincas, setFincas] = useState<any[]>([]);
+    const [fincas, setFincas] = useState<FincaDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const user = useAuthStore(state => state.user);
@@ -64,13 +64,14 @@ export default function FarmWireframe() {
         e.preventDefault();
 
         // Obtenemos el ID del productor
-        const productorId = user?.id || 1;
+        const productorId = 1;
 
         // IMPORTANTE: Mapeo de campos para que coincidan con la Base de Datos (snake_case)
         const payload = {
             nombre: formData.nombre,
             municipio: formData.municipio,
             departamento: formData.departamento,
+
             area_hectareas: Number(formData.areaHectareas) || 0, // Cambiado a snake_case
             codigo_ica: formData.codigoIca,                     // Cambiado a snake_case
             productor_id: productorId                           // Cambiado a snake_case
@@ -203,7 +204,7 @@ export default function FarmWireframe() {
                                                 <div className="font-bold uppercase">{f.nombre}</div>
                                                 <div className="text-[10px] text-gray-500 uppercase mt-0.5">{f.municipio}, {f.departamento}</div>
                                                 <div className="text-[9px] text-black font-bold uppercase mt-2 border-t border-dotted border-gray-300 pt-1">
-                                                    PRODUCTOR: {f.productorNombre || 'NO_ASIGNADO'}
+                                                    PRODUCTOR: {f.productorId|| 'NO_ASIGNADO'}
                                                 </div>
                                             </td>
                                             <td className="border-2 border-black p-3 text-center font-bold uppercase">{f.areaHectareas || 0} HA</td>
@@ -238,7 +239,7 @@ export default function FarmWireframe() {
                                         <div className="text-[10px] uppercase space-y-1">
                                             <p><span className="text-gray-500">UBICACIÓN:</span> {f.municipio}, {f.departamento}</p>
                                             <p><span className="text-gray-500">REG_ICA:</span> {f.codigoIca || 'SIN_REGISTRO'}</p>
-                                            <p className="pt-1 border-t border-dotted border-gray-300 font-bold">PRODUCTOR: {f.productorNombre || 'NO_ASIGNADO'}</p>
+                                            <p className="pt-1 border-t border-dotted border-gray-300 font-bold">PRODUCTOR: {f.productorId || 'NO_ASIGNADO'}</p>
                                         </div>
                                         <div className="flex gap-2 pt-2">
                                             <button onClick={() => iniciarEdicion(f)} className="flex-1 border-2 border-black py-2 text-[10px] font-bold uppercase hover:bg-black hover:text-white transition-all">[EDITAR]</button>

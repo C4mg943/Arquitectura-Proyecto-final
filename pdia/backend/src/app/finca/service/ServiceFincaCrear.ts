@@ -1,11 +1,9 @@
-import { Response } from "express";
 import pool from "../../../config/connection/dbConnetions";
 import { SQL_FINCAS } from "../repository/sql_finca";
 import Finca from "../model/finca";
 
 class ServicioFincaCrear {
-    public static async grabarFinca(obj: any, res: Response): Promise<any> {
-        
+    public static async grabarFinca(obj: any): Promise<any> {
 
         const nuevaFinca = new Finca(
             0,
@@ -18,71 +16,42 @@ class ServicioFincaCrear {
             new Date()
         );
 
-        await pool
-            .task(async (consulta) => {
-                let caso = 1;
-                let objGrabado: any;
+        return await pool.task(async (consulta) => {
+            let caso = 1; // Por defecto: Nombre duplicado
+            let objGrabado: any;
 
-                const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [
-                    nuevaFinca.productorId,
-                ]);
 
-                if (!existeProductor) {
-                    caso = 3;
-                    return { caso };
-                }
-               
-                const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO, [
+            const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [
+                nuevaFinca.productorId,
+            ]);
+
+            if (!existeProductor) {
+                caso = 3; // Productor no existe
+                return { caso };
+            }
+
+
+            const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO, [
+                nuevaFinca.nombre,
+                nuevaFinca.municipio,
+                nuevaFinca.productorId,
+            ]);
+
+
+            if (Number(duplicados.cantidad) === 0) {
+                caso = 2; // Éxito
+                objGrabado = await consulta.one(SQL_FINCAS.ADD, [
                     nuevaFinca.nombre,
                     nuevaFinca.municipio,
+                    nuevaFinca.departamento,
                     nuevaFinca.productorId,
+                    nuevaFinca.areaHectareas,
+                    nuevaFinca.codigoIca
                 ]);
+            }
 
-                if (Number(duplicados.cantidad) === 0) {
-                    caso = 2;
-                    objGrabado = await consulta.one(SQL_FINCAS.ADD, [
-                        nuevaFinca.nombre,
-                        nuevaFinca.municipio,
-                        nuevaFinca.departamento,
-                        nuevaFinca.productorId,
-                        nuevaFinca.areaHectareas,
-                        nuevaFinca.codigoIca
-                    ]);
-                }
-
-                return { caso, objGrabado };
-            })
-            .then(({ caso, objGrabado }) => {
-                switch (caso) {
-                    case 1:
-                        res.status(400).json({
-                            success: false,
-                            message: "Ya tienes una finca registrada con ese nombre en este municipio"
-                        });
-                        break;
-                    case 2:
-                        res.status(200).json({
-                            success: true,
-                            message: "Finca creada correctamente (Model Logic)",
-                            data: { idFinca: objGrabado.id }
-                        });
-                        break;
-                    case 3:
-                        res.status(400).json({
-                            success: false,
-                            message: "El productor especificado no existe en el sistema"
-                        });
-                        break;
-                }
-            })
-            .catch((miError) => {
-                console.error(" Error en ServicioFincaCrear:", miError);
-                res.status(500).json({ 
-                    success: false,
-                    message: "Error interno en el servidor",
-                    details: miError.message || miError
-                });
-            });
+            return { caso, objGrabado };
+        });
     }
 }
 

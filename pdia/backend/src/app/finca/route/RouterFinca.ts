@@ -12,10 +12,10 @@ class RouterFinca{
 
     }
     public configurarRutas(): void {
-        this.rutaFincaApi.get("/getAll",controllerConsultarFincas.getAll);
-        this.rutaFincaApi.post("/create", controllerCrearFinca.crear);
-        this.rutaFincaApi.put("/update/:idFinca", controllerFincaActualizar.actualizar);
-        this.rutaFincaApi.delete("/delete/:idFinca", controllerFincaBorrar.eliminar);
+        this.rutaFincaApi.get("/",controllerConsultarFincas.getAll);
+        this.rutaFincaApi.post("/", controllerCrearFinca.crear);
+        this.rutaFincaApi.put("/:idFinca", controllerFincaActualizar.actualizar);
+        this.rutaFincaApi.delete("/:idFinca", controllerFincaBorrar.eliminar);
     }
 }
 const rutasFinca = new RouterFinca();

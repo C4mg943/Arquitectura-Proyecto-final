@@ -14,9 +14,9 @@ import ParcelsPage from './features/parcels/pages/ParcelsPage'
 import ReportsPage from './features/reports/pages/ReportsPage'
 import WeatherPage from './features/weather/pages/WeatherPage'
 import { AppShell } from './shared/components/layout'
-import FarmsPage from './features/fram/pages/FarmsPage.tsx'
-import FarmWireframe from './features/fram/pages/FarmWireframe.tsx';
-import FarmMockup from './features/fram/pages/FarmMockup.tsx';
+import FarmsPage from './features/farms/pages/FarmsPage.tsx'
+import FarmWireframe from './features/farms/pages/FarmWireframe.tsx';
+import FarmMockup from './features/farms/pages/FarmMockup.tsx';
 
 function App() {
     return (

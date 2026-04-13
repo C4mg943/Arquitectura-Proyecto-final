@@ -1,8 +1,8 @@
-import { useAuthStore, type AuthUser } from '../../store/authStore'
+import { useAuthStore} from '../../store/authStore'
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
-
+// --- Interfaces Esenciales ---
 
 interface ApiEnvelope<T> {
   success: boolean
@@ -11,154 +11,18 @@ interface ApiEnvelope<T> {
   details?: unknown
 }
 
-
-export type CultivoEstado = 'EN_CRECIMIENTO' | 'COSECHADO' | 'AFECTADO'
-export type ActivityType = 'RIEGO' | 'FERTILIZACION' | 'PLAGA' | 'OBSERVACION'
-export type AlertType = 'LLUVIA' | 'TEMPERATURA_ALTA' | 'TEMPERATURA_BAJA' | 'VIENTO'
-
-export interface AuthResponse {
-  token: string
-  user: AuthUser
-}
-
-export interface RegisterPayload {
-  nombre: string
-  identificacion: string
-  email: string
-  password: string
-  rol?: AuthUser['rol']
-}
-
-export interface LoginPayload {
-  email: string
-  password: string
-}
-
-export interface ForgotPasswordPayload {
-  email: string
-}
-
-export interface ForgotPasswordResponse {
-  requestAccepted: boolean
-  resetUrl?: string
-}
-
-export interface ResetPasswordPayload {
-  token: string
-  password: string
-}
-
-export interface UpdateProfilePayload {
-  nombre: string
-  identificacion: string
-  email: string
-}
-
-export interface UpdatePasswordPayload {
-  currentPassword: string
-  newPassword: string
-}
-
-export interface ParcelaDto {
+export interface FincaDto {
   id: number
   nombre: string
   municipio: string
-  hectareas: number
-  latitud: number
-  longitud: number
+  departamento: string
   productorId: number
+  areaHectareas: number
+  codigoIca: string
+  createdAt: string | Date
 }
 
-export interface CreateParcelaPayload {
-  nombre: string
-  municipio: string
-  hectareas: number
-  latitud: number
-  longitud: number
-}
-
-export interface UpdateParcelaPayload {
-  nombre?: string
-  municipio?: string
-  hectareas?: number
-  latitud?: number
-  longitud?: number
-}
-
-export interface CultivoDto {
-  id: number
-  tipoCultivo: string
-  fechaSiembra: string
-  estado: CultivoEstado
-  observaciones: string | null
-  parcelaId: number
-}
-
-export interface CreateCultivoPayload {
-  tipoCultivo: string
-  fechaSiembra: string
-  estado: CultivoEstado
-  observaciones?: string
-  parcelaId: number
-}
-
-export interface UpdateCultivoPayload {
-  tipoCultivo?: string
-  fechaSiembra?: string
-  estado?: CultivoEstado
-  observaciones?: string
-}
-
-export interface ActividadDto {
-  id: number
-  tipo: ActivityType
-  fecha: string
-  descripcion: string
-  datos: Record<string, unknown> | null
-  cultivoId: number
-  creadoPorId: number
-}
-
-export interface CreateActividadPayload {
-  tipo: ActivityType
-  fecha: string
-  descripcion: string
-  datos?: Record<string, unknown>
-  cultivoId: number
-}
-
-export interface UpdateActividadPayload {
-  tipo?: ActivityType
-  fecha?: string
-  descripcion?: string
-  datos?: Record<string, unknown>
-}
-
-export interface AlertaDto {
-  id: number
-  tipo: AlertType
-  valorDetectado: number
-  fecha: string
-  cultivoId: number
-  leida: boolean
-}
-
-export interface CreateAlertaPayload {
-  tipo: AlertType
-  valorDetectado: number
-  fecha: string
-  cultivoId: number
-}
-
-export interface ReporteActividadesDto {
-  cultivoId: number
-  totalActividades: number
-  porTipo: Record<string, number>
-  desde: string | null
-  hasta: string | null
-}
-
-type ApiBlob = Blob
+// --- Manejo de Errores ---
 
 export class ApiClientError extends Error {
   public readonly status: number
@@ -168,8 +32,11 @@ export class ApiClientError extends Error {
     super(message)
     this.status = status
     this.details = details
+    this.name = 'ApiClientError'
   }
 }
+
+// --- Utilidades Internas ---
 
 function withLeadingSlash(path: string): string {
   return path.startsWith('/') ? path : `/${path}`
@@ -187,22 +54,10 @@ function createHeaders(extraHeaders?: HeadersInit): Headers {
   return headers
 }
 
-function handleUnauthorized(): void {
-  useAuthStore.getState().clear()
-  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-    window.location.replace('/login')
-  }
-}
-
-async function parseAsJson<T>(response: Response): Promise<ApiEnvelope<T>> {
-  return (await response.json()) as ApiEnvelope<T>
-}
-
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = createHeaders(init.headers)
-  const shouldSerializeBody = init.body !== undefined && !(init.body instanceof FormData)
 
-  if (shouldSerializeBody && !headers.has('Content-Type')) {
+  if (init.body && !headers.has('Content-Type') && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -211,115 +66,52 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers,
   })
 
-  if (response.status === 401) {
-    handleUnauthorized()
+  // Redirección si el token expira
+  if (response.status === 401 && typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    useAuthStore.getState().clear()
+    window.location.replace('/login')
   }
 
   const contentType = response.headers.get('content-type') ?? ''
-  const isJson = contentType.includes('application/json')
 
-  if (isJson) {
-    const payload = await parseAsJson<T>(response)
+  if (contentType.includes('application/json')) {
+    const payload = (await response.json()) as ApiEnvelope<T>
     if (!response.ok || !payload.success) {
       throw new ApiClientError(payload.message || 'Error en la solicitud', response.status, payload.details)
     }
-
     return payload.data as T
   }
 
   if (!response.ok) {
     const text = await response.text()
-    throw new ApiClientError(text || 'Error en la solicitud', response.status)
+    throw new ApiClientError(text || 'Error en el servidor', response.status)
   }
 
-  return (await response.blob()) as T
+  return {} as T
 }
 
-function toQueryString(params: Record<string, string | number | undefined>): string {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
-      query.set(key, String(value))
-    }
-  })
-  const serialized = query.toString()
-  return serialized ? `?${serialized}` : ''
-}
+// --- Cliente de API (Solo Fincas) ---
 
 export const apiClient = {
-
-  get: <T>(path: string) => request<T>(path, { method: 'GET' }),
-  post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
-  put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-  getBlob: (path: string) => request<ApiBlob>(path, { method: 'GET' }),
-
-  probarConexion: async (): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.get<{ success: boolean; message: string }>('/')
-    return response
-  },
-
-  auth: {
-    register: (payload: RegisterPayload) => apiClient.post<AuthResponse>('/api/auth/register', payload),
-    login: (payload: LoginPayload) => apiClient.post<AuthResponse>('/api/auth/login', payload),
-    me: () => apiClient.get<AuthUser>('/api/auth/me'),
-    forgotPassword: (payload: ForgotPasswordPayload) =>
-      apiClient.post<ForgotPasswordResponse>('/api/auth/forgot-password', payload),
-    resetPassword: (payload: ResetPasswordPayload) => apiClient.post<void>('/api/auth/reset-password', payload),
-    updateProfile: (payload: UpdateProfilePayload) => apiClient.put<AuthUser>('/api/auth/me', payload),
-    updatePassword: (payload: UpdatePasswordPayload) => apiClient.put<void>('/api/auth/me/password', payload),
-  },
-
-  parcelas: {
-    list: () => apiClient.get<ParcelaDto[]>('/api/parcelas'),
-    findOne: (id: number) => apiClient.get<ParcelaDto>(`/api/parcelas/${id}`),
-    create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas', payload),
-    update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/parcelas/${id}`),
-  },
-
   fincas: {
-    list: () => apiClient.get<any[]>('/api/finca/getAll'),
-    create: (payload: any) => apiClient.post<any>('/api/finca/create', payload),
-    update: (id: number, payload: any) => apiClient.put<any>(`/api/finca/update/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/finca/delete/${id}`),
+    list: () => request<FincaDto[]>('/api/finca/'),
+
+    create: (payload: Partial<FincaDto>) =>
+        request<FincaDto>('/api/finca/', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }),
+
+    update: (id: number, payload: Partial<FincaDto>) =>
+        request<FincaDto>(`/api/finca/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        }),
+
+    delete: (id: number) =>
+        request<void>(`/api/finca/${id}`, { method: 'DELETE' }),
   },
 
-  cultivos: {
-    list: (tipoCultivo?: string) =>
-      apiClient.get<CultivoDto[]>(`/api/cultivos${toQueryString({ tipoCultivo })}`),
-    findOne: (id: number) => apiClient.get<CultivoDto>(`/api/cultivos/${id}`),
-    create: (payload: CreateCultivoPayload) => apiClient.post<CultivoDto>('/api/cultivos', payload),
-    update: (id: number, payload: UpdateCultivoPayload) => apiClient.put<CultivoDto>(`/api/cultivos/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/cultivos/${id}`),
-  },
-
-  actividades: {
-    list: () => apiClient.get<ActividadDto[]>('/api/actividades'),
-    findOne: (id: number) => apiClient.get<ActividadDto>(`/api/actividades/${id}`),
-    listByCultivo: (cultivoId: number) => apiClient.get<ActividadDto[]>(`/api/actividades/cultivo/${cultivoId}`),
-    create: (payload: CreateActividadPayload) => apiClient.post<ActividadDto>('/api/actividades', payload),
-    update: (id: number, payload: UpdateActividadPayload) =>
-      apiClient.put<ActividadDto>(`/api/actividades/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/actividades/${id}`),
-  },
-
-  alertas: {
-    list: () => apiClient.get<AlertaDto[]>('/api/alertas'),
-    findOne: (id: number) => apiClient.get<AlertaDto>(`/api/alertas/${id}`),
-    listByCultivo: (cultivoId: number) => apiClient.get<AlertaDto[]>(`/api/alertas/cultivo/${cultivoId}`),
-    create: (payload: CreateAlertaPayload) => apiClient.post<AlertaDto>('/api/alertas', payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/alertas/${id}`),
-  },
-
-  reportes: {
-    actividades: (cultivoId: number) => apiClient.get<ReporteActividadesDto>(`/api/reportes/actividades/${cultivoId}`),
-    actividadesCsv: (cultivoId: number) => apiClient.getBlob(`/api/reportes/actividades/${cultivoId}/csv`),
-    riegos: (cultivoId: number) => apiClient.get<ReporteActividadesDto>(`/api/reportes/riegos/${cultivoId}`),
-    fertilizaciones: (cultivoId: number) =>
-      apiClient.get<ReporteActividadesDto>(`/api/reportes/fertilizaciones/${cultivoId}`),
-  },
-
+  // Mantenemos esto para verificar salud del backend
+  probarConexion: () => request<{ success: boolean; message: string }>('/')
 }
