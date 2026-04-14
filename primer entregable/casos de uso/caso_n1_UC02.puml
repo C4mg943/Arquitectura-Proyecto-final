@@ -27,6 +27,7 @@ rectangle "Gestionar Parcelas" {
     usecase "Modificar Parcela" as UC02_2
     usecase "Eliminar Parcela" as UC02_3
     usecase "Listar Parcelas" as UC02_4
+    usecase "Consultar parcelas" as UC02_6
 
     ' Función extendida (abajo)
     usecase "Asignar Operario\na Parcela" as UC02_5
@@ -42,5 +43,5 @@ Productor --> UC02_2
 Productor --> UC02_3
 Productor --> UC02_4
 Productor --> UC02_5
-
+Productor --> UC02_6
 @enduml

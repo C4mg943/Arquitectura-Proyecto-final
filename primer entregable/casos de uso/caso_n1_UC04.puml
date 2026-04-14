@@ -22,7 +22,7 @@ actor Operario
 actor "Técnico\nAgrónomo" as Tecnico
 
 ' Sistema
-rectangle "Registrar Actividades Agrícolas" {
+rectangle "Gestionar Actividades Agrícolas" {
 
     ' Registro (arriba)
     usecase "Registrar Riego" as UC03_1

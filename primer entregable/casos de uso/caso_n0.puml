@@ -32,12 +32,13 @@ rectangle "Sistema de Gestión Agrícola" {
     ' Núcleo productivo (centro)
     usecase "Gestionar Parcelas" as UC02
     usecase "Gestionar Cultivos" as UC03
-    usecase "Registrar Actividades\nAgrícolas" as UC04
+    usecase "Gestionar Actividades\nAgrícolas" as UC04
 
     ' Soporte y análisis (abajo)
     usecase "Consultar Información\nClimática" as UC05
     usecase "Gestionar Alertas\ny Recomendaciones" as UC06
-    usecase "Generar Reportes" as UC07
+    usecase "Gestionar Reportes" as UC07
+    usecase "Gestionar Fincas" as UC09
 }
 
 ' Relaciones Productor
@@ -48,11 +49,12 @@ Productor --> UC05
 Productor --> UC06
 Productor --> UC07
 Productor --> UC08
+Productor --> UC09
 
 ' Relaciones Operario
 Operario --> UC04
 Operario --> UC08
-
+Operario --> UC03
 ' Relaciones Técnico
 UC02 <-- Tecnico
 UC03 <-- Tecnico

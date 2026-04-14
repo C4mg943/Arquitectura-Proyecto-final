@@ -19,7 +19,7 @@ skinparam ArrowColor #2E75B6
 ' Actores
 actor "Productor\nAgrícola" as Productor
 actor "Técnico\nAgrónomo" as Tecnico
-
+actor "operario" as operario
 ' Sistema
 rectangle "Gestionar Cultivos" {
 
@@ -44,6 +44,8 @@ Productor --> UC03_2
 Productor --> UC03_3
 Productor --> UC03_4
 
+UC03_4 <-- operario
+UC03_6 <-- operario
 
 Tecnico --> UC03_4
 Tecnico --> UC03_6

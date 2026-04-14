@@ -29,9 +29,9 @@ rectangle "Gestionar Alertas y Recomendaciones" {
     usecase "Generar Recomendación\nAgrícola" as UC06_3
 
     ' Consulta (centro)
-    usecase "Consultar Alertas\ndel Cultivo" as UC06_2
-    usecase "Consultar Recomendaciones\ndel Cultivo" as UC06_4
-    usecase "Consultar\nNotificaciones" as UC06_5
+    usecase "Gestionar Alertas\ndel Cultivo" as UC06_2
+    usecase "Gestionar Recomendaciones\ndel Cultivo" as UC06_4
+    usecase "Gestionar\nNotificaciones" as UC06_5
 
     ' Registro (abajo)
     usecase "Registrar Alerta\nen Historial" as UC06_6
