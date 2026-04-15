@@ -7,13 +7,13 @@ import routerFinca from "../../app/finca/route/RouterFinca";
 
 class Servidor
 {
-    public app:Express.Application;
+    publ xic app:Express.Application;
     constructor() {
         this.app= Express();
         this.app.set("PORT", Number(process.env.PORT_B) || 3123);
         this.app.use(helmet());
         this.app.use(cors({
-            origin: '*', // Permite cualquier origen
+            origin: '*',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization', 'Bypass-Tunnel-Reminder']
         }));
@@ -41,8 +41,8 @@ class Servidor
 
             })
             .catch((error) => {
-                console.error("❌ Error de Base de Datos:", error.message || error);
-                console.log("⚠️  Revisa si tu contenedor Docker está encendido.");
+                console.error("Error de Base de Datos:", error.message || error);
+                console.log("Revisa si tu contenedor Docker está encendido.");
             });
     }
 }

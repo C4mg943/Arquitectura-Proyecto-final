@@ -1,57 +1,31 @@
-import pool from "../../../config/connection/dbConnetions";
-import { SQL_FINCAS } from "../repository/sql_finca";
 import { FincaUpdateDto } from "../model/dto/dtoFinca";
 import { ImpFincaRepository } from "../repository/ImpFincaRepository";
-import Finca from "../model/finca";
+import { IFincaRepository } from "../repository/IFincaRepository";
 
 class ServiceFincaActualizar {
-    private static fincaRepo: ImpFincaRepository = new ImpFincaRepository();
+    private static fincaRepo: IFincaRepository = new ImpFincaRepository();
 
-    // Ya no recibe "res", ahora retorna el resultado o lanza un error
     public static async ejecutar(obj: FincaUpdateDto): Promise<any> {
+        // Validación de Productor
+        const existeProductor = await this.fincaRepo.checkProductorExists(obj.productorId);
+        if (!existeProductor) {
+            return { caso: 3 }; // Productor no existe
+        }
 
-        const fincaActualizar = new Finca(
-            obj.id,
+        // Validación de Duplicados
+        const duplicados = await this.fincaRepo.checkDuplicateUpdate(
             obj.nombre,
-            obj.municipio,
-            obj.departamento,
             obj.productorId,
-            obj.area_hectareas || 0,
-            obj.codigo_ica || '',
-            new Date()
+            obj.id
         );
 
-        return await pool.task(async (consulta) => {
-            // Validación de Productor
-            const existeProductor = await consulta.oneOrNone(SQL_FINCAS.FINDBY_PRODUCTOR, [fincaActualizar.productorId]);
-            if (!existeProductor) {
-                return { caso: 3 }; // Productor no existe
-            }
+        if (duplicados > 0) {
+            return { caso: 1 }; // Nombre duplicado
+        }
 
-            // Validación de Duplicados
-            const duplicados = await consulta.one(SQL_FINCAS.CHECK_DUPLICADO_UPDATE, [
-                fincaActualizar.nombre,
-                fincaActualizar.productorId,
-                fincaActualizar.id
-            ]);
-
-            if (Number(duplicados.cantidad) > 0) {
-                return { caso: 1 }; // Nombre duplicado
-            }
-
-            // Ejecución de Actualización
-            const resultadoActualizacion = await this.fincaRepo.update({
-                id: fincaActualizar.id,
-                nombre: fincaActualizar.nombre,
-                municipio: fincaActualizar.municipio,
-                departamento: fincaActualizar.departamento,
-                productorId: fincaActualizar.productorId,
-                area_hectareas: fincaActualizar.areaHectareas,
-                codigo_ica: fincaActualizar.codigoIca
-            });
-
-            return { caso: 2, resultadoActualizacion };
-        });
+        // Ejecución de Actualización
+        const resultadoActualizacion = await this.fincaRepo.update(obj);
+        return { caso: 2, resultadoActualizacion };
     }
 }
 
