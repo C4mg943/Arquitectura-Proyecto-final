@@ -7,7 +7,7 @@ import routerFinca from "../../app/finca/route/RouterFinca";
 
 class Servidor
 {
-    publ xic app:Express.Application;
+    public app:Express.Application;
     constructor() {
         this.app= Express();
         this.app.set("PORT", Number(process.env.PORT_B) || 3123);
