@@ -233,7 +233,7 @@ export default function FincasPage() {
         value={filter}
       />
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <Card>
             <p className="text-on-surface-variant">Cargando fincas...</p>
@@ -248,50 +248,68 @@ export default function FincasPage() {
 
         {filteredFincas.map((finca) => {
           const badge = getBadge(finca.tipoFinca)
+          const inicial = finca.nombre.charAt(0).toUpperCase()
           return (
-            <Card className="overflow-hidden p-0" key={finca.id}>
-              <div className="h-40 bg-gradient-to-br from-primary-container to-surface-container-high" />
-              <div className="space-y-4 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-title-lg wrap-break-word text-on-surface">{finca.nombre}</h3>
-                    <p className="mt-1 text-sm text-on-surface-variant">{finca.ubicacion}</p>
-                  </div>
-                  <Badge variant={badge.variant}>{badge.text}</Badge>
+            <Card className="w-full overflow-visible p-0" key={finca.id}>
+              {/* BODY */}
+              <div className="flex items-start gap-3 p-4">
+                {/* Avatar */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-on-primary">
+                  <span className="font-headline text-2xl font-bold">{inicial}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="surface-panel rounded-xl p-3">
-                    <p className="text-label-md text-on-surface-variant">ÁREA</p>
-                    <p className="font-headline mt-1 text-lg font-bold text-on-surface">{finca.area} Ha</p>
+                {/* Contenido */}
+                <div className="min-w-0 flex-1">
+                  {/* Nombre + Badge en la misma línea, badge baja si no cabe */}
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <h3 className="text-base font-bold text-on-surface">{finca.nombre}</h3>
+                    <Badge className="shrink-0 px-3 py-0.5 text-xs" variant={badge.variant}>
+                      {badge.text}
+                    </Badge>
                   </div>
-                  <div className="surface-panel rounded-xl p-3">
-                    <p className="text-label-md text-on-surface-variant">TIPO</p>
-                    <p className="mt-1 text-xs font-semibold text-on-surface">{getTipoLabel(finca.tipoFinca)}</p>
-                  </div>
-                </div>
-
-                <div className="surface-panel rounded-xl p-3">
-                  <p className="text-label-md text-on-surface-variant">CÓDIGO ICA/INVIMA</p>
-                  <p className="mt-1 text-xs font-semibold text-on-surface">{finca.codigoIcaInvima ?? 'Sin código'}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button className="flex-1" onClick={() => openEdit(finca)} variant="tertiary">
-                    Editar
-                  </Button>
-                  <button
-                    aria-label={`Eliminar ${finca.nombre}`}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
-                    onClick={() => {
-                      void handleDelete(finca)
-                    }}
-                    type="button"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
+                  <p className="mt-1 text-sm text-on-surface-variant">{finca.ubicacion}</p>
                 </div>
               </div>
+
+              {/* Pills de stats — fuera del flex para usar el ancho total */}
+              <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+                <div className="surface-panel rounded-xl p-3">
+                  <p className="text-xs font-medium text-on-surface-variant">ÁREA</p>
+                  <p className="mt-1 whitespace-nowrap text-xl font-bold text-on-surface">
+                    {finca.area} Ha
+                  </p>
+                </div>
+                <div className="surface-panel rounded-xl p-3">
+                  <p className="text-xs font-medium text-on-surface-variant">TIPO</p>
+                  <p className="mt-1 text-base font-semibold text-on-surface">
+                    {getTipoLabel(finca.tipoFinca)}
+                  </p>
+                </div>
+              </div>
+
+{/* Footer */}
+<div className="flex items-center gap-2 border-t border-outline-variant px-4 py-3">
+  {/* shrink-0 + sin truncate = siempre visible */}
+  <span className="shrink-0 text-xs text-on-surface-variant">
+    ICA: {finca.codigoIcaInvima ?? 'Sin código'}
+  </span>
+  <div className="flex-1" />
+  <Button
+    className="h-9 shrink-0 px-4 text-sm"
+    onClick={() => openEdit(finca)}
+    variant="tertiary"
+  >
+    Editar
+  </Button>
+  <button
+    aria-label={`Eliminar ${finca.nombre}`}
+    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
+    onClick={() => { void handleDelete(finca) }}
+    type="button"
+  >
+    <span className="material-symbols-outlined text-base">delete</span>
+  </button>
+</div>
             </Card>
           )
         })}

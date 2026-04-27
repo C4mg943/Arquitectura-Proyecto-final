@@ -10,8 +10,7 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true, roles: ['PRODUCTOR', 'OPERARIO', 'TECNICO', 'ADMINISTRADOR'] },
-  { to: '/profile', label: 'Perfil', icon: 'person', roles: ['PRODUCTOR', 'OPERARIO', 'TECNICO', 'ADMINISTRADOR'] },
+  { to: '/', label: 'Inicio', icon: 'dashboard', end: true, roles: ['PRODUCTOR', 'OPERARIO', 'TECNICO', 'ADMINISTRADOR'] },
   { to: '/fincas', label: 'Fincas', icon: 'villa', roles: ['PRODUCTOR'] },
   { to: '/parcelas', label: 'Parcelas', icon: 'potted_plant', roles: ['PRODUCTOR'] },
   { to: '/mis-parcelas', label: 'Mis Parcelas', icon: 'map', roles: ['OPERARIO'] },
@@ -27,7 +26,7 @@ export const mobileNavItems: NavItem[] = [
   { to: '/parcelas', label: 'Parcelas', icon: 'map', roles: ['PRODUCTOR'] },
   { to: '/mis-parcelas', label: 'Mis Parcelas', icon: 'map', roles: ['OPERARIO'] },
   { to: '/cultivos', label: 'Cultivos', icon: 'grass', roles: ['PRODUCTOR', 'OPERARIO'] },
-  { to: '/', label: 'Inicio', icon: 'home', end: true, roles: ['PRODUCTOR', 'OPERARIO', 'TECNICO', 'ADMINISTRADOR'] },
+  { to: '/', label: 'Inicio', icon: 'dashboard', end: true, roles: ['PRODUCTOR', 'OPERARIO', 'TECNICO', 'ADMINISTRADOR'] },
   { to: '/clima', label: 'Clima', icon: 'cloudy', roles: ['PRODUCTOR', 'OPERARIO'] },
-  { to: '/reportes', label: 'Reportes', icon: 'settings', roles: ['PRODUCTOR', 'OPERARIO'] },
+  { to: '/reportes', label: 'Reportes', icon: 'assessment', roles: ['PRODUCTOR', 'OPERARIO'] },
 ]

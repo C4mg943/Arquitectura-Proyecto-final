@@ -20,19 +20,19 @@ export default function Card({ title, subtitle, actions, className, children, ..
   return (
     <article
       className={cn(
-        'surface-card overflow-hidden p-6 md:p-7',
+        'surface-card w-full overflow-visible p-4 md:p-6 lg:p-7 lg:p-8',
         useDefaultBackground ? 'bg-surface-container-lowest' : undefined,
         className,
       )}
       {...props}
     >
       {title || subtitle || actions ? (
-        <header className="mb-5 flex items-start justify-between gap-4 border-b border-outline-variant/35 pb-4">
+        <header className="mb-4 overflow-visible flex items-start justify-between gap-4 border-b border-outline-variant/35 pb-4 md:mb-5">
           <div>
             {title ? <h3 className="text-title-lg text-on-surface">{title}</h3> : null}
             {subtitle ? <p className="mt-1 text-sm text-on-surface-variant">{subtitle}</p> : null}
           </div>
-          {actions ? <div>{actions}</div> : null}
+          {actions ? <div className="overflow-visible">{actions}</div> : null}
         </header>
       ) : null}
       {children}

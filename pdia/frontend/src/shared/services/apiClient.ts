@@ -1,6 +1,6 @@
 import { useAuthStore, type AuthUser } from '../../store/authStore'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3123'
+const BASE_URL = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8000'
 
 interface ApiEnvelope<T> {
   success: boolean
@@ -13,6 +13,10 @@ export type CultivoEstado = 'EN_CRECIMIENTO' | 'COSECHADO' | 'AFECTADO'
 export type ActivityType = 'RIEGO' | 'FERTILIZACION' | 'PLAGA' | 'OBSERVACION'
 export type AlertType = 'LLUVIA' | 'TEMPERATURA_ALTA' | 'TEMPERATURA_BAJA' | 'VIENTO'
 export type TipoFinca = 'AGRICOLA' | 'GANADERA' | 'MIXTA' | 'FORESTAL'
+
+export interface LoginResponse {
+  token: string
+}
 
 export interface AuthResponse {
   token: string
@@ -215,6 +219,41 @@ export interface CreateAlertaPayload {
   cultivoId: number
 }
 
+export interface WeatherCurrentDto {
+  temperatura: number
+  humedad: number
+  probabilidadLluvia: number
+  velocidadViento: number
+  timestamp: string
+}
+
+export interface WeatherForecastDayDto {
+  fecha: string
+  tempMax: number
+  tempMin: number
+  probabilidadLluvia: number
+}
+
+export interface NotificationDto {
+  id: number
+  userId: number
+  tipo: string
+  titulo: string
+  mensaje: string
+  leida: boolean
+  createdAt: string
+}
+
+export type RecomendacionTipo = 'RIEGO' | 'FERTILIZACION' | 'FITORECOMENDACION'
+
+export interface RecomendacionDto {
+  id: number
+  tipo: RecomendacionTipo
+  descripcion: string
+  fecha: string
+  cultivoId: number
+}
+
 export interface ReporteActividadesDto {
   cultivoId: number
   totalActividades: number
@@ -238,6 +277,23 @@ export class ApiClientError extends Error {
 
 function withLeadingSlash(path: string): string {
   return path.startsWith('/') ? path : `/${path}`
+}
+
+function decodeJwtPayload(token: string): { userId: number; email: string; rol: string } | null {
+  try {
+    const base64Url = token.split('.')[1]
+    if (!base64Url) return null
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    )
+    return JSON.parse(jsonPayload)
+  } catch {
+    return null
+  }
 }
 
 function createHeaders(extraHeaders?: HeadersInit): Headers {
@@ -285,11 +341,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (isJson) {
     const payload = await parseAsJson<T>(response)
-    if (!response.ok || !payload.success) {
-      throw new ApiClientError(payload.message || 'Error en la solicitud', response.status, payload.details)
+
+    if (!response.ok) {
+      const errorMsg = (payload && typeof payload === 'object' && 'message' in payload)
+        ? (payload as { message?: string }).message
+        : (payload && typeof payload === 'object' && 'error' in payload)
+          ? (payload as { error?: string }).error
+          : 'Error en la solicitud'
+      throw new ApiClientError(errorMsg || 'Error en la solicitud', response.status, payload?.details)
     }
 
-    return payload.data as T
+    if (payload && typeof payload === 'object' && 'success' in payload) {
+      const typedPayload = payload as ApiEnvelope<T>
+      if (!typedPayload.success) {
+        const errorMsg = typedPayload.message || 'Error en la solicitud'
+        throw new ApiClientError(errorMsg, response.status, typedPayload.details)
+      }
+      return typedPayload.data as T
+    }
+
+    return payload as T
   }
 
   if (!response.ok) {
@@ -327,7 +398,24 @@ export const apiClient = {
 
   auth: {
     register: (payload: RegisterPayload) => apiClient.post<AuthResponse>('/api/auth/register', payload),
-    login: (payload: LoginPayload) => apiClient.post<AuthResponse>('/api/auth/login', payload),
+    login: async (payload: LoginPayload): Promise<AuthResponse> => {
+      const loginResponse = await apiClient.post<LoginResponse>('/api/auth/login', payload)
+      const jwtPayload = decodeJwtPayload(loginResponse.token)
+      if (!jwtPayload) {
+        throw new ApiClientError('Token inválido', 500)
+      }
+      return {
+        token: loginResponse.token,
+        user: {
+          id: jwtPayload.userId,
+          email: jwtPayload.email,
+          nombre: '',
+          identificacion: '',
+          rol: jwtPayload.rol as AuthUser['rol'],
+          productorId: null,
+        },
+      }
+    },
     me: () => apiClient.get<AuthUser>('/api/auth/me'),
     forgotPassword: (payload: ForgotPasswordPayload) =>
       apiClient.post<ForgotPasswordResponse>('/api/auth/forgot-password', payload),
@@ -337,19 +425,19 @@ export const apiClient = {
   },
 
   parcelas: {
-    list: () => apiClient.get<ParcelaDto[]>('/api/parcelas'),
-    findOne: (id: number) => apiClient.get<ParcelaDto>(`/api/parcelas/${id}`),
-    create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas', payload),
-    update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/parcelas/${id}`),
+    list: () => apiClient.get<ParcelaDto[]>('/api/parcelas/parcela'),
+    findOne: (id: number) => apiClient.get<ParcelaDto>(`/api/parcelas/parcela/${id}`),
+    create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas/parcela', payload),
+    update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/parcela/${id}`, payload),
+    delete: (id: number) => apiClient.delete<void>(`/api/parcelas/parcela/${id}`),
   },
 
   fincas: {
-    list: () => apiClient.get<FincaDto[]>('/api/fincas'),
-    findOne: (id: number) => apiClient.get<FincaDto>(`/api/fincas/${id}`),
-    create: (payload: CreateFincaPayload) => apiClient.post<FincaDto>('/api/fincas', payload),
-    update: (id: number, payload: UpdateFincaPayload) => apiClient.put<FincaDto>(`/api/fincas/${id}`, payload),
-    delete: (id: number) => apiClient.delete<void>(`/api/fincas/${id}`),
+    list: () => apiClient.get<FincaDto[]>('/api/fincas/finca'),
+    findOne: (id: number) => apiClient.get<FincaDto>(`/api/fincas/finca/${id}`),
+    create: (payload: CreateFincaPayload) => apiClient.post<FincaDto>('/api/fincas/finca', payload),
+    update: (id: number, payload: UpdateFincaPayload) => apiClient.put<FincaDto>(`/api/fincas/finca/${id}`, payload),
+    delete: (id: number) => apiClient.delete<void>(`/api/fincas/finca/${id}`),
   },
 
   operarios: {
@@ -385,7 +473,23 @@ export const apiClient = {
     findOne: (id: number) => apiClient.get<AlertaDto>(`/api/alertas/${id}`),
     listByCultivo: (cultivoId: number) => apiClient.get<AlertaDto[]>(`/api/alertas/cultivo/${cultivoId}`),
     create: (payload: CreateAlertaPayload) => apiClient.post<AlertaDto>('/api/alertas', payload),
+    markRead: (id: number) => apiClient.put<void>(`/api/alertas/${id}/read`),
     delete: (id: number) => apiClient.delete<void>(`/api/alertas/${id}`),
+  },
+
+  weather: {
+    getCurrent: (parcelaId: number) => apiClient.get<WeatherCurrentDto>(`/api/weather/current/${parcelaId}`),
+    getForecast: (parcelaId: number) => apiClient.get<WeatherForecastDayDto[]>(`/api/weather/forecast/${parcelaId}`),
+  },
+
+  notifications: {
+    list: () => apiClient.get<NotificationDto[]>('/api/notifications'),
+    markRead: (id: number) => apiClient.put<void>(`/api/notifications/${id}/read`),
+  },
+
+  recomendaciones: {
+    list: () => apiClient.get<RecomendacionDto[]>('/api/recomendaciones'),
+    listByCultivo: (cultivoId: number) => apiClient.get<RecomendacionDto[]>(`/api/recomendaciones/cultivo/${cultivoId}`),
   },
 
   reportes: {

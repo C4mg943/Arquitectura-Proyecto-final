@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Badge, Button, Card } from '../../../shared/components/common'
-import { apiClient, ApiClientError, type ActividadDto, type CreateActividadPayload, type CultivoDto } from '../../../shared/services/apiClient'
+import {
+  apiClient,
+  ApiClientError,
+  type ActividadDto,
+  type CreateActividadPayload,
+  type CultivoDto,
+  type FincaDto,
+  type ParcelaDto,
+} from '../../../shared/services/apiClient'
 import { useAuthStore } from '../../../store/authStore'
 
 const activityMeta: Record<ActividadDto['tipo'], { icon: string; color: string; iconBg: string; label: string }> = {
@@ -14,9 +22,13 @@ const activityMeta: Record<ActividadDto['tipo'], { icon: string; color: string; 
 export default function ActivitiesPage() {
   const user = useAuthStore((state) => state.user)
   const [activities, setActivities] = useState<ActividadDto[]>([])
-  const [crops, setCrops] = useState<CultivoDto[]>([])
+  const [fincas, setFincas] = useState<FincaDto[]>([])
+  const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
+  const [cultivos, setCultivos] = useState<CultivoDto[]>([])
   const [tipoFilter, setTipoFilter] = useState<'TODAS' | ActividadDto['tipo']>('TODAS')
-  const [cultivoFilter, setCultivoFilter] = useState<number | 'TODOS'>('TODOS')
+  const [fincaFilter, setFincaFilter] = useState<number | 'TODAS'>('TODAS')
+  const [parcelaFilter, setParcelaFilter] = useState<number | 'TODAS'>('TODAS')
+  const [cultivoFilter, setCultivoFilter] = useState<number | 'TODAS'>('TODAS')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,23 +38,44 @@ export default function ActivitiesPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
   const [descripcion, setDescripcion] = useState('')
 
-  const cropById = useMemo(() => {
-    const map = new Map<number, CultivoDto>()
-    crops.forEach((crop) => {
-      map.set(crop.id, crop)
-    })
+  const parcelaById = useMemo(() => {
+    const map = new Map<number, ParcelaDto>()
+    parcelas.forEach((parcela) => map.set(parcela.id, parcela))
     return map
-  }, [crops])
+  }, [parcelas])
+
+  const cultivoById = useMemo(() => {
+    const map = new Map<number, CultivoDto>()
+    cultivos.forEach((cultivo) => map.set(cultivo.id, cultivo))
+    return map
+  }, [cultivos])
+
+  const filteredParcelas = useMemo(() => {
+    if (fincaFilter === 'TODAS') return parcelas
+    return parcelas.filter((p) => p.fincaId === Number(fincaFilter))
+  }, [parcelas, fincaFilter])
+
+  const filteredCultivos = useMemo(() => {
+    if (parcelaFilter === 'TODAS') return cultivos
+    return cultivos.filter((c) => c.parcelaId === Number(parcelaFilter))
+  }, [cultivos, parcelaFilter])
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const [activitiesResponse, cropsResponse] = await Promise.all([apiClient.actividades.list(), apiClient.cultivos.list()])
+      const [activitiesResponse, fincasResponse, parcelasResponse, cultivosResponse] = await Promise.all([
+        apiClient.actividades.list(),
+        apiClient.fincas.list(),
+        apiClient.parcelas.list(),
+        apiClient.cultivos.list(),
+      ])
       setActivities(activitiesResponse)
-      setCrops(cropsResponse)
-      if (cropsResponse.length > 0) {
-        setCultivoId(cropsResponse[0].id)
+      setFincas(fincasResponse)
+      setParcelas(parcelasResponse)
+      setCultivos(cultivosResponse)
+      if (cultivosResponse.length > 0) {
+        setCultivoId(cultivosResponse[0].id)
       }
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
@@ -62,7 +95,7 @@ export default function ActivitiesPage() {
   const filteredActivities = useMemo(() => {
     return activities.filter((activity) => {
       const matchTipo = tipoFilter === 'TODAS' || activity.tipo === tipoFilter
-      const matchCultivo = cultivoFilter === 'TODOS' || activity.cultivoId === cultivoFilter
+      const matchCultivo = cultivoFilter === 'TODAS' || activity.cultivoId === cultivoFilter
       return matchTipo && matchCultivo
     })
   }, [activities, cultivoFilter, tipoFilter])
@@ -108,8 +141,8 @@ export default function ActivitiesPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="md:col-span-3">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Card className="md:col-span-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
             <label className="space-y-2">
               <span className="text-label-md block text-on-surface-variant">Filtrar por tipo</span>
               <select
@@ -126,27 +159,59 @@ export default function ActivitiesPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="text-label-md block text-on-surface-variant">Cultivo</span>
+              <span className="text-label-md block text-on-surface-variant">Finca</span>
               <select
                 className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
                 onChange={(event) => {
-                  const raw = event.target.value
-                  setCultivoFilter(raw === 'TODOS' ? 'TODOS' : Number(raw))
+                  const val = event.target.value
+                  setFincaFilter(val === 'TODAS' ? 'TODAS' : Number(val))
+                  setParcelaFilter('TODAS')
+                  setCultivoFilter('TODAS')
                 }}
-                value={cultivoFilter}
+                value={fincaFilter}
               >
-                <option value="TODOS">Todos los cultivos</option>
-                {crops.map((crop) => (
-                  <option key={crop.id} value={crop.id}>{crop.tipoCultivo}</option>
+                <option value="TODAS">Todas las fincas</option>
+                {fincas.map((f) => (
+                  <option key={f.id} value={f.id}>{f.nombre}</option>
                 ))}
               </select>
             </label>
 
-            <div className="flex items-end">
-              <Button className="w-full" leadingIcon="refresh" onClick={() => void loadData()} variant="primary">
-                Recargar
-              </Button>
-            </div>
+            <label className="space-y-2">
+              <span className="text-label-md block text-on-surface-variant">Parcela</span>
+              <select
+                className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                onChange={(event) => {
+                  const val = event.target.value
+                  setParcelaFilter(val === 'TODAS' ? 'TODAS' : Number(val))
+                  setCultivoFilter('TODAS')
+                }}
+                value={parcelaFilter}
+                disabled={fincaFilter !== 'TODAS' && filteredParcelas.length === 0}
+              >
+                <option value="TODAS">Todas las parcelas</option>
+                {filteredParcelas.map((p) => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-label-md block text-on-surface-variant">Cultivo</span>
+              <select
+                className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                onChange={(event) => {
+                  const val = event.target.value
+                  setCultivoFilter(val === 'TODAS' ? 'TODAS' : Number(val))
+                }}
+                value={cultivoFilter}
+              >
+                <option value="TODAS">Todos los cultivos</option>
+                {filteredCultivos.map((c) => (
+                  <option key={c.id} value={c.id}>{c.tipoCultivo}</option>
+                ))}
+              </select>
+            </label>
           </div>
         </Card>
 
@@ -186,9 +251,9 @@ export default function ActivitiesPage() {
                 onChange={(event) => setCultivoId(Number(event.target.value))}
                 value={cultivoId ?? ''}
               >
-                {crops.length === 0 ? <option value="">Sin cultivos</option> : null}
-                {crops.map((crop) => (
-                  <option key={crop.id} value={crop.id}>{crop.tipoCultivo}</option>
+                {cultivos.length === 0 ? <option value="">Sin cultivos</option> : null}
+                {cultivos.map((c) => (
+                  <option key={c.id} value={c.id}>{c.tipoCultivo}</option>
                 ))}
               </select>
             </label>
@@ -239,6 +304,8 @@ export default function ActivitiesPage() {
 
         {filteredActivities.map((activity) => {
           const meta = activityMeta[activity.tipo]
+          const cultivo = cultivoById.get(activity.cultivoId)
+          const parcela = cultivo ? parcelaById.get(cultivo.parcelaId) : null
           return (
             <Card className="p-0 overflow-hidden" key={activity.id}>
               <div className="flex">
@@ -257,7 +324,8 @@ export default function ActivitiesPage() {
                         <p className="mt-1 text-sm text-on-surface-variant">{activity.descripcion}</p>
                         <p className="mt-1.5 inline-flex items-center gap-1 text-xs text-on-surface-variant">
                           <span className="material-symbols-outlined" style={{fontSize: '14px'}}>eco</span>
-                          {cropById.get(activity.cultivoId)?.tipoCultivo ?? `Cultivo #${activity.cultivoId}`}
+                          {cultivo?.tipoCultivo ?? `Cultivo #${activity.cultivoId}`}
+                          {parcela && <span> · {parcela.nombre}</span>}
                         </p>
                       </div>
                     </div>

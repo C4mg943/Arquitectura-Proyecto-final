@@ -1,0 +1,23 @@
+import amqp, { Channel } from "amqplib";
+
+let channel: Channel | null = null;
+
+export async function connectRabbitMQ(): Promise<void> {
+  try {
+    const host = process.env.RABBITMQ_HOST || "localhost";
+    const port = process.env.RABBITMQ_PORT || "5672";
+    const connection = await amqp.connect(`amqp://guest:guest@${host}:${port}`);
+    channel = await connection.createChannel();
+    await channel.assertExchange("pdia.events", "topic", { durable: true });
+    console.log("✅ RabbitMQ connected");
+  } catch (error) {
+    console.error("❌ RabbitMQ connection failed:", error);
+  }
+}
+
+export async function publishEvent(routingKey: string, message: object): Promise<void> {
+  if (!channel) return;
+  channel.publish("pdia.events", routingKey, Buffer.from(JSON.stringify(message)), { persistent: true });
+}
+
+export { pool } from "./db.js";

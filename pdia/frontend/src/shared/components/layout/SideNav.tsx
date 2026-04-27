@@ -30,10 +30,7 @@ export default function SideNav() {
 
   return (
     <aside className="surface-panel fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-outline-variant/45 p-4 lg:flex lg:flex-col">
-      <div className="mb-8 mt-20 px-2">
-        <h2 className="font-headline text-lg font-bold text-primary">The Agronomist</h2>
-        <p className="text-label-md mt-1 text-on-surface-variant">Precision Yield Management</p>
-      </div>
+      <div className="mb-8 mt-20 px-2"></div>
 
       <nav className="flex flex-1 flex-col gap-1">
         {visibleItems.map((item) => (

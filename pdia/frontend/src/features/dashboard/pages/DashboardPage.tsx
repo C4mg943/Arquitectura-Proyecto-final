@@ -1,28 +1,64 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { Link } from 'react-router-dom'
+
 import { Badge, Button, Card } from '../../../shared/components/common'
 import { apiClient, type CultivoDto, type ParcelaDto } from '../../../shared/services/apiClient'
-import { useAuthStore } from '../../../store/authStore'
 
 function mapStatusLabel(estado: CultivoDto['estado']): string {
-  if (estado === 'EN_CRECIMIENTO') {
-    return 'Crecimiento'
-  }
-
-  if (estado === 'COSECHADO') {
-    return 'Cosechado'
-  }
-
+  if (estado === 'EN_CRECIMIENTO') return 'Crecimiento'
+  if (estado === 'COSECHADO') return 'Cosechado'
   return 'Afectado'
 }
 
+interface WeatherData {
+  temperatura: number
+  humedad: number
+  viento: number
+  condicion: string
+  icon: string
+}
+
 export default function DashboardPage() {
-  const user = useAuthStore((state) => state.user)
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [cultivos, setCultivos] = useState<CultivoDto[]>([])
   const [alertas, setAlertas] = useState<{ id: number; tipo: string; valorDetectado: number; fecha: string }[]>([])
+  const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const loadWeather = async () => {
+    try {
+      const parcelasResponse = await apiClient.parcelas.list()
+      if (parcelasResponse.length === 0) return
+
+      const parcela = parcelasResponse[0]
+      const lat = Number(parcela.latitud)
+      const lon = Number(parcela.longitud)
+
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
+      )
+      const data = await res.json()
+
+      const temp = Math.round(data.current.temperature_2m)
+      const wind = Math.round(data.current.wind_speed_10m)
+
+      let condicion = 'Parcialmente nublado'
+      let icon = 'partly_cloudy_day'
+      if (temp > 30) {
+        condicion = 'Caluroso'
+        icon = 'wb_sunny'
+      } else if (temp < 20) {
+        condicion = 'Fresco'
+        icon = 'cool_mode'
+      }
+
+      setWeather({ temperatura: temp, humedad: data.current.relative_humidity_2m, viento: wind, condicion, icon })
+    } catch {
+      setWeather(null)
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +74,7 @@ export default function DashboardPage() {
         setParcelas(parcelasResponse)
         setCultivos(cultivosResponse)
         setAlertas(alertasResponse)
+        await loadWeather()
       } catch {
         setError('No fue posible cargar el resumen del panel.')
       } finally {
@@ -64,60 +101,66 @@ export default function DashboardPage() {
   )
 
   const summaryCards = [
-    { icon: 'grid_view', value: String(parcelas.length), label: 'Parcelas Totales' },
+    { icon: 'grid_view', value: String(parcelas.length), label: 'Parcelas' },
     { icon: 'area_chart', value: `${totalHectareas.toFixed(1)}`, label: 'Hectáreas' },
     { icon: 'potted_plant', value: String(cultivos.length), label: 'Cultivos' },
-    { icon: 'category', value: String(tiposCultivo), label: 'Tipos de Cultivo' },
+    { icon: 'category', value: String(tiposCultivo), label: 'Tipos' },
   ]
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-headline-md text-on-primary-fixed-variant">Bienvenido, {user?.nombre ?? 'Productor'}</h1>
-          <p className="mt-1 text-on-surface-variant">
-            Estado general de la explotación: <strong className="text-primary">{error ? 'Con novedades' : 'Óptimo'}</strong>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button leadingIcon="add_task" variant="primary">
-            Registrar Actividad
-          </Button>
-          <Button leadingIcon="nature_people" variant="secondary">
-            Añadir Cultivo
-          </Button>
-        </div>
+      <header>
+        <h1 className="text-headline-md text-on-primary-fixed-variant">Inicio</h1>
+        <p className="mt-1 text-on-surface-variant">
+          Estado: <strong className="text-primary">{error ? 'Con novedades' : 'Óptimo'}</strong>
+        </p>
       </header>
 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Link className="w-full" to="/actividades">
+          <Button className="w-full h-14 text-base" leadingIcon="add_task" variant="primary">
+            Registrar Actividad
+          </Button>
+        </Link>
+        <Link className="w-full" to="/cultivos">
+          <Button className="w-full h-14 text-base" leadingIcon="grass" variant="secondary">
+            Añadir Cultivo
+          </Button>
+        </Link>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-        <Card className="md:col-span-4 bg-[linear-gradient(145deg,var(--color-tertiary-container),var(--color-tertiary))] text-on-tertiary">
-          <p className="text-label-md opacity-80">CLIMA ACTUAL</p>
-          <div className="mt-4 flex items-center gap-4">
-            <span className="material-symbols-outlined text-6xl">partly_cloudy_day</span>
+        <Card className="md:col-span-4 bg-primary-container text-on-primary-container">
+          <p className="text-label-md opacity-80">CLIMA</p>
+          <div className="mt-3 flex items-center gap-4">
+            <span className="material-symbols-outlined text-5xl">
+              {weather?.icon ?? 'partly_cloudy_day'}
+            </span>
             <div>
-              <h2 className="font-headline text-5xl font-bold">24°C</h2>
-              <p className="text-sm opacity-90">Mayormente soleado</p>
+              <h2 className="font-headline text-4xl font-bold">
+                {weather?.temperatura ?? '--'}°C
+              </h2>
+              <p className="text-sm opacity-90">{weather?.condicion ?? 'Cargando...'}</p>
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <p className="text-sm">Humedad: 45%</p>
-            <p className="text-sm">Viento: 12 km/h</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <p className="text-sm">Humedad: {weather?.humedad ?? '--'}%</p>
+            <p className="text-sm">Viento: {weather?.viento ?? '--'} km/h</p>
           </div>
         </Card>
 
-        <Card className="md:col-span-8" subtitle="Resumen de estado productivo" title="Resumen de Parcelas">
+        <Card className="md:col-span-8" title="Resumen">
           {error ? (
-            <p className="mb-4 rounded-xl bg-error-container px-3 py-2 text-sm font-semibold text-on-error-container">{error}</p>
+            <p className="mb-3 rounded-xl bg-error-container px-3 py-2 text-sm font-semibold text-on-error-container">{error}</p>
           ) : null}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {summaryCards.map((card) => (
               <div className="surface-panel rounded-2xl p-4 text-center" key={card.label}>
                 <span className="material-symbols-outlined text-primary">{card.icon}</span>
-                <p className="font-headline mt-2 text-2xl font-bold text-on-surface">
+                <p className="font-headline mt-1 text-2xl font-bold text-on-surface">
                   {isLoading ? '...' : card.value}
                 </p>
-                <p className="mt-1 text-xs text-on-surface-variant">{card.label}</p>
+                <p className="text-xs text-on-surface-variant">{card.label}</p>
               </div>
             ))}
           </div>
@@ -126,39 +169,36 @@ export default function DashboardPage() {
         <Card className="md:col-span-6" title="Cultivos Activos">
           <div className="space-y-3">
             {cultivosActivos.length === 0 && !isLoading ? (
-              <article className="surface-panel rounded-2xl p-4">
-                <p className="text-sm text-on-surface-variant">No hay cultivos activos en este momento.</p>
-              </article>
+              <p className="text-sm text-on-surface-variant">Sin cultivos activos.</p>
             ) : null}
             {cultivosActivos.map((crop) => (
               <article className="surface-panel rounded-2xl p-4" key={crop.id}>
                 <p className="font-semibold text-on-surface">{crop.tipoCultivo}</p>
-                <p className="mt-1 text-xs text-on-surface-variant">
+                <p className="text-xs text-on-surface-variant">
                   Siembra: {new Date(crop.fechaSiembra).toLocaleDateString('es-CO')}
                 </p>
-                <p className="mt-2 text-xs font-bold text-primary">{mapStatusLabel(crop.estado)}</p>
+                <p className="text-xs font-bold text-primary">{mapStatusLabel(crop.estado)}</p>
               </article>
             ))}
           </div>
         </Card>
 
-        <Card className="md:col-span-6" title="Alertas y Notificaciones">
+        <Card className="md:col-span-6" title="Alertas">
           <div className="space-y-3">
             {alertas.slice(0, 2).map((alerta) => (
               <article className="rounded-2xl bg-error-container p-4" key={alerta.id}>
-                <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between">
                   <p className="font-semibold text-on-error-container">{alerta.tipo}</p>
                   <Badge variant="danger">Nueva</Badge>
                 </div>
                 <p className="text-sm text-on-error-container">
-                  Valor detectado: {alerta.valorDetectado} · {new Date(alerta.fecha).toLocaleString('es-CO')}
+                  {alerta.valorDetectado} · {new Date(alerta.fecha).toLocaleString('es-CO')}
                 </p>
               </article>
             ))}
-            <article className="surface-panel rounded-2xl p-4">
-              <p className="font-semibold text-on-surface">Reporte semanal disponible</p>
-              <p className="mt-1 text-sm text-on-surface-variant">Semana 22 lista para descarga.</p>
-            </article>
+            {alertas.length === 0 && !isLoading && (
+              <p className="text-sm text-on-surface-variant">Sin alertas activas.</p>
+            )}
           </div>
         </Card>
       </div>

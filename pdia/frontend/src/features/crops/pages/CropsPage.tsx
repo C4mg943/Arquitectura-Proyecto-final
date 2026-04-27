@@ -265,49 +265,64 @@ export default function CropsPage() {
         ) : null}
 
         {filteredCrops.map((crop) => (
-          <Card className="p-5" key={crop.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-fixed">
-                  <span className="material-symbols-outlined text-primary">eco</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-on-surface">{crop.tipoCultivo}</h3>
-                  <p className="text-xs text-on-surface-variant">{parcelaById.get(crop.parcelaId)?.nombre ?? 'Sin parcela'}</p>
-                </div>
+          <Card className="w-full overflow-visible p-0" key={crop.id}>
+            {/* BODY */}
+            <div className="flex items-start gap-3 p-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-container text-on-primary-container">
+                <span className="font-headline text-2xl font-bold">{crop.tipoCultivo.charAt(0)}</span>
               </div>
-              <Badge variant={mapEstadoToBadge(crop.estado)}>{mapEstadoToLabel(crop.estado)}</Badge>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <h3 className="text-base font-bold text-on-surface">{crop.tipoCultivo}</h3>
+                  <Badge className="shrink-0 px-3 py-0.5 text-xs" variant={mapEstadoToBadge(crop.estado)}>
+                    {mapEstadoToLabel(crop.estado)}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  {parcelaById.get(crop.parcelaId)?.nombre ?? 'Sin parcela'}
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <div className="surface-panel rounded-xl p-2">
-                <p className="text-label-md text-on-surface-variant">Estado</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface">{mapEstadoToLabel(crop.estado)}</p>
+            {/* Pills — texto xs para que quepan los 3 en la fila */}
+            <div className="grid grid-cols-3 gap-2 px-4 pb-4">
+              <div className="surface-panel rounded-xl p-2.5">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Estado</p>
+                <p className="mt-1 text-xs font-semibold leading-tight text-on-surface">
+                  {mapEstadoToLabel(crop.estado)}
+                </p>
               </div>
-              <div className="surface-panel rounded-xl p-2">
-                <p className="text-label-md text-on-surface-variant">Parcela ID</p>
+              <div className="surface-panel rounded-xl p-2.5">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Parcela</p>
                 <p className="mt-1 text-xs font-semibold text-on-surface">#{crop.parcelaId}</p>
               </div>
-              <div className="surface-panel rounded-xl p-2">
-                <p className="text-label-md text-on-surface-variant">Siembra</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface">{new Date(crop.fechaSiembra).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}</p>
+              <div className="surface-panel rounded-xl p-2.5">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Siembra</p>
+                <p className="mt-1 text-xs font-semibold leading-tight text-on-surface">
+                  {new Date(crop.fechaSiembra).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}
+                </p>
               </div>
             </div>
 
-            {crop.observaciones ? <p className="mt-4 text-xs text-on-surface-variant">{crop.observaciones}</p> : null}
+            {/* Footer sin observaciones inline */}
+            {crop.observaciones ? (
+              <p className="border-t border-outline-variant px-4 py-2.5 text-xs text-on-surface-variant">
+                {crop.observaciones}
+              </p>
+            ) : null}
 
             {canManageCrops ? (
-              <div className="mt-4 flex items-center gap-2">
-                <Button className="flex-1" onClick={() => openEdit(crop)} variant="tertiary">Editar</Button>
+              <div className="flex items-center gap-2 border-t border-outline-variant px-4 py-3">
+                <Button className="h-9 flex-1 text-sm" onClick={() => openEdit(crop)} variant="tertiary">
+                  Editar
+                </Button>
                 <button
                   aria-label={`Eliminar ${crop.tipoCultivo}`}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95 transition-colors"
-                  onClick={() => {
-                    void handleDelete(crop)
-                  }}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
+                  onClick={() => { void handleDelete(crop) }}
                   type="button"
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
+                  <span className="material-symbols-outlined text-base">delete</span>
                 </button>
               </div>
             ) : null}

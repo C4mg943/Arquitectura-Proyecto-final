@@ -220,56 +220,72 @@ export default function ParcelsPage() {
           </Card>
         ) : null}
 
-        {filteredParcelas.map((parcel) => {
-          const badge = getStatus(parcel)
-          return (
-            <Card className="overflow-hidden p-0" key={parcel.id}>
-              <div className="h-40 bg-gradient-to-br from-primary-container to-surface-container-high" />
-              <div className="space-y-4 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-title-lg wrap-break-word text-on-surface">{parcel.nombre}</h3>
-                    <p className="mt-1 text-sm text-on-surface-variant">{parcel.municipio}</p>
-                  </div>
-                  <Badge variant={badge.variant}>{badge.text}</Badge>
-                </div>
+{filteredParcelas.map((parcel) => {
+  const badge = getStatus(parcel)
+  const inicial = parcel.nombre.charAt(0).toUpperCase()
+  return (
+    <Card className="w-full overflow-visible p-0" key={parcel.id}>
+      {/* BODY */}
+      <div className="flex items-start gap-3 p-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-100 text-green-700">
+          <span className="font-headline text-2xl font-bold">{inicial}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="text-base font-bold text-on-surface">{parcel.nombre}</h3>
+            <Badge className="shrink-0 px-3 py-0.5 text-xs" variant={badge.variant}>
+              {badge.text}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-on-surface-variant">{parcel.municipio}</p>
+        </div>
+      </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="surface-panel rounded-xl p-3">
-                    <p className="text-label-md text-on-surface-variant">ÁREA</p>
-                    <p className="font-headline mt-1 text-lg font-bold text-on-surface">{parcel.hectareas} Ha</p>
-                  </div>
-                  <div className="surface-panel rounded-xl p-3">
-                    <p className="text-label-md text-on-surface-variant">COORDENADAS</p>
-                    <p className="mt-1 text-xs font-semibold text-on-surface">{parcel.latitud.toFixed(4)}, {parcel.longitud.toFixed(4)}</p>
-                  </div>
-                </div>
+{/* Pills */}
+<div className="grid grid-cols-2 gap-2 px-4 pb-4">
+  <div className="surface-panel rounded-xl p-3">
+    <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Área</p>
+    <p className="mt-1 whitespace-nowrap text-xl font-bold text-on-surface">
+      {parcel.hectareas} Ha
+    </p>
+  </div>
+  <div className="surface-panel rounded-xl p-3">
+    <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Coordenadas</p>
+    {/* Dos líneas en lugar de truncar */}
+    <p className="mt-1 text-xs font-semibold leading-snug text-on-surface">
+      {parcel.latitud.toFixed(3)}<br />
+      {parcel.longitud.toFixed(3)}
+    </p>
+  </div>
+</div>
 
-                {canManageParcelas ? (
-                  <p className="text-xs text-on-surface-variant">Finca #{parcel.fincaId}</p>
-                ) : null}
-
-                {canManageParcelas ? (
-                  <div className="flex items-center gap-2">
-                    <Button className="flex-1" onClick={() => openEdit(parcel)} variant="tertiary">
-                      Editar
-                    </Button>
-                    <button
-                      aria-label={`Eliminar ${parcel.nombre}`}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
-                      onClick={() => {
-                        void handleDelete(parcel)
-                      }}
-                      type="button"
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </Card>
-          )
-        })}
+{/* Footer — finca ID siempre visible */}
+{canManageParcelas ? (
+  <div className="flex items-center gap-2 border-t border-outline-variant px-4 py-3">
+    <span className="shrink-0 text-xs text-on-surface-variant">
+      Finca #{parcel.fincaId}
+    </span>
+    <div className="flex-1" />
+    <Button
+      className="h-9 shrink-0 px-4 text-sm"
+      onClick={() => openEdit(parcel)}
+      variant="tertiary"
+    >
+      Editar
+    </Button>
+    <button
+      aria-label={`Eliminar ${parcel.nombre}`}
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
+      onClick={() => { void handleDelete(parcel) }}
+      type="button"
+    >
+      <span className="material-symbols-outlined text-base">delete</span>
+    </button>
+  </div>
+) : null}
+    </Card>
+  )
+})}
       </div>
 
       {isFormOpen && canManageParcelas ? (
