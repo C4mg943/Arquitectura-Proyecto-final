@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { body, validationResult } from "express-validator";
-import { AuthService, RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "../services/auth.service.js";
+import { AuthService, RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from "../services/auth.service.js";
 import { authMiddleware, AuthRequest } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -100,6 +100,28 @@ router.put(
     try {
       const result = await authService.updateProfile(req.user!.userId, req.body);
       res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.put(
+  "/password",
+  authMiddleware,
+  [
+    body("currentPassword").notEmpty().withMessage("La contraseña actual es requerida"),
+    body("newPassword").isLength({ min: 6 }).withMessage("La nueva contraseña debe tener al menos 6 caracteres"),
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      await authService.changePassword(req.user!.userId, req.body as ChangePasswordDto);
+      res.json({ message: "Contraseña actualizada correctamente" });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

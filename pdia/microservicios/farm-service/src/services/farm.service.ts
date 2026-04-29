@@ -9,11 +9,12 @@ export class FarmService {
     descripcion?: string;
     area: number;
     tipoFinca: string;
+    codigoIcaInvima?: string;
   }): Promise<Finca> {
     const result = await pool.query(
-      `INSERT INTO fincas (nombre, ubicacion, descripcion, area, tipo_finca, propietario_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.nombre, data.ubicacion, data.descripcion || null, data.area, data.tipoFinca, propietarioId]
+      `INSERT INTO fincas (nombre, ubicacion, descripcion, area, tipo_finca, propietario_id, codigo_ica_invima)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [data.nombre, data.ubicacion, data.descripcion || null, data.area, data.tipoFinca, propietarioId, data.codigoIcaInvima || null]
     );
     return new Finca(result.rows[0]);
   }

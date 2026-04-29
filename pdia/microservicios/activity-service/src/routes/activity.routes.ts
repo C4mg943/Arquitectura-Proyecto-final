@@ -31,6 +31,69 @@ router.post(
   }
 );
 
+router.post(
+  "/riego",
+  requireRoles("PRODUCTOR", "OPERARIO"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { fecha, cantidadAgua, observaciones, cultivoId } = req.body;
+      const actividad = await activityService.create({
+        tipo: TipoActividad.RIEGO,
+        fecha,
+        descripcion: `Riego de ${cantidadAgua} litros. ${observaciones || ""}`,
+        datos: { cantidadAgua, observaciones },
+        cultivoId,
+        usuarioId: req.user!.userId,
+      });
+      res.status(201).json(actividad.toJson());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.post(
+  "/fertilizante",
+  requireRoles("PRODUCTOR", "OPERARIO"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { fecha, tipoFertilizante, observaciones, cultivoId } = req.body;
+      const actividad = await activityService.create({
+        tipo: TipoActividad.FERTILIZACION,
+        fecha,
+        descripcion: `Aplicación de fertilizante: ${tipoFertilizante}. ${observaciones || ""}`,
+        datos: { tipoFertilizante, observaciones },
+        cultivoId,
+        usuarioId: req.user!.userId,
+      });
+      res.status(201).json(actividad.toJson());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.post(
+  "/plaga",
+  requireRoles("PRODUCTOR", "OPERARIO"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { fecha, tipoPlaga, accionAplicada, observaciones, cultivoId } = req.body;
+      const actividad = await activityService.create({
+        tipo: TipoActividad.PLAGA,
+        fecha,
+        descripcion: `Control de plaga: ${tipoPlaga}. Acción: ${accionAplicada}. ${observaciones || ""}`,
+        datos: { tipoPlaga, accionAplicada, observaciones },
+        cultivoId,
+        usuarioId: req.user!.userId,
+      });
+      res.status(201).json(actividad.toJson());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
 router.get("/", async (req: AuthRequest, res: Response) => {
   try {
     const actividades = await activityService.listByUsuario(req.user!.userId, req.user!.rol);

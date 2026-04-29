@@ -38,6 +38,12 @@ export default function ActivitiesPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0])
   const [descripcion, setDescripcion] = useState('')
 
+  // Specific fields for RF12, RF13, RF14
+  const [cantidadAgua, setCantidadAgua] = useState<number>(0)
+  const [tipoFertilizante, setTipoFertilizante] = useState('')
+  const [tipoPlaga, setTipoPlaga] = useState('')
+  const [accionAplicada, setAccionAplicada] = useState('')
+
   const parcelaById = useMemo(() => {
     const map = new Map<number, ParcelaDto>()
     parcelas.forEach((parcela) => map.set(parcela.id, parcela))
@@ -93,31 +99,64 @@ export default function ActivitiesPage() {
   }, [loadData])
 
   const filteredActivities = useMemo(() => {
-    return activities.filter((activity) => {
-      const matchTipo = tipoFilter === 'TODAS' || activity.tipo === tipoFilter
-      const matchCultivo = cultivoFilter === 'TODAS' || activity.cultivoId === cultivoFilter
-      return matchTipo && matchCultivo
-    })
+    return activities
+      .filter((activity) => {
+        const matchTipo = tipoFilter === 'TODAS' || activity.tipo === tipoFilter
+        const matchCultivo = cultivoFilter === 'TODAS' || activity.cultivoId === cultivoFilter
+        return matchTipo && matchCultivo
+      })
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
   }, [activities, cultivoFilter, tipoFilter])
 
   const handleCreate = async () => {
-    if (!cultivoId || descripcion.trim().length < 3) {
-      setError('Completa tipo, cultivo y descripción (mínimo 3 caracteres).')
+    if (!cultivoId) {
+      setError('Selecciona un cultivo.')
       return
     }
 
     setError(null)
     setIsSubmitting(true)
     try {
-      const payload: CreateActividadPayload = {
-        tipo,
-        cultivoId,
-        fecha,
-        descripcion: descripcion.trim(),
+      let created: ActividadDto
+      
+      if (tipo === 'RIEGO') {
+        created = await apiClient.actividades.createRiego({
+          cultivoId,
+          fecha,
+          cantidadAgua,
+          observaciones: descripcion.trim(),
+        })
+      } else if (tipo === 'FERTILIZACION') {
+        created = await apiClient.actividades.createFertilizante({
+          cultivoId,
+          fecha,
+          tipoFertilizante,
+          observaciones: descripcion.trim(),
+        })
+      } else if (tipo === 'PLAGA') {
+        created = await apiClient.actividades.createPlaga({
+          cultivoId,
+          fecha,
+          tipoPlaga,
+          accionAplicada,
+          observaciones: descripcion.trim(),
+        })
+      } else {
+        const payload: CreateActividadPayload = {
+          tipo,
+          cultivoId,
+          fecha,
+          descripcion: descripcion.trim(),
+        }
+        created = await apiClient.actividades.create(payload)
       }
-      const created = await apiClient.actividades.create(payload)
+
       setActivities((current) => [created, ...current])
       setDescripcion('')
+      setCantidadAgua(0)
+      setTipoFertilizante('')
+      setTipoPlaga('')
+      setAccionAplicada('')
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
         setError(unknownError.message)
@@ -269,13 +308,68 @@ export default function ActivitiesPage() {
               />
             </label>
 
-            <label className="space-y-1 md:col-span-2" htmlFor="create-activity-desc">
-              <span className="text-label-md text-on-surface-variant">Descripción</span>
+            {/* Dynamic Fields */}
+            {tipo === 'RIEGO' && (
+              <label className="space-y-1" htmlFor="create-activity-water">
+                <span className="text-label-md text-on-surface-variant">Agua (litros)</span>
+                <input
+                  id="create-activity-water"
+                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(event) => setCantidadAgua(Number(event.target.value))}
+                  type="number"
+                  value={cantidadAgua}
+                />
+              </label>
+            )}
+
+            {tipo === 'FERTILIZACION' && (
+              <label className="space-y-1" htmlFor="create-activity-fert">
+                <span className="text-label-md text-on-surface-variant">Fertilizante</span>
+                <input
+                  id="create-activity-fert"
+                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(event) => setTipoFertilizante(event.target.value)}
+                  placeholder="Ej: Urea"
+                  type="text"
+                  value={tipoFertilizante}
+                />
+              </label>
+            )}
+
+            {tipo === 'PLAGA' && (
+              <>
+                <label className="space-y-1" htmlFor="create-activity-pest">
+                  <span className="text-label-md text-on-surface-variant">Plaga</span>
+                  <input
+                    id="create-activity-pest"
+                    className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(event) => setTipoPlaga(event.target.value)}
+                    placeholder="Ej: Pulgón"
+                    type="text"
+                    value={tipoPlaga}
+                  />
+                </label>
+                <label className="space-y-1" htmlFor="create-activity-action">
+                  <span className="text-label-md text-on-surface-variant">Acción</span>
+                  <input
+                    id="create-activity-action"
+                    className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(event) => setAccionAplicada(event.target.value)}
+                    placeholder="Ej: Insecticida"
+                    type="text"
+                    value={accionAplicada}
+                  />
+                </label>
+              </>
+            )}
+
+            <label className={`space-y-1 ${tipo === 'PLAGA' ? 'md:col-span-5' : 'md:col-span-1'}`} htmlFor="create-activity-desc">
+              <span className="text-label-md text-on-surface-variant">Observaciones</span>
               <input
                 id="create-activity-desc"
                 className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
                 onChange={(event) => setDescripcion(event.target.value)}
-                placeholder="Detalle de la actividad"
+                placeholder="Detalle extra..."
                 type="text"
                 value={descripcion}
               />

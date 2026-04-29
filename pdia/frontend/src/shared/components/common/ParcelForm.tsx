@@ -38,12 +38,12 @@ export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, o
   const seedForm = useMemo<ParcelFormState>(() => {
     if (mode === 'edit' && initialValue) {
       return {
-        nombre: initialValue.nombre,
-        municipio: initialValue.municipio,
-        hectareas: String(initialValue.hectareas),
-        latitud: String(initialValue.latitud),
-        longitud: String(initialValue.longitud),
-        fincaId: String(initialValue.fincaId),
+        nombre: initialValue.nombre ?? '',
+        municipio: initialValue.municipio ?? '',
+        hectareas: initialValue.hectareas != null ? String(initialValue.hectareas) : '',
+        latitud: initialValue.latitud != null ? String(initialValue.latitud) : '',
+        longitud: initialValue.longitud != null ? String(initialValue.longitud) : '',
+        fincaId: initialValue.fincaId != null ? String(initialValue.fincaId) : '',
       }
     }
 

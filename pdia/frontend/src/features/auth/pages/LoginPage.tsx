@@ -31,7 +31,17 @@ export default function LoginPage() {
     setIsSubmitting(true)
     try {
       const response = await apiClient.auth.login(parsed.data)
+      // 1. Save token and basic data first so future requests have Authorization header
       setAuth(response.token, response.user)
+      
+      try {
+        // 2. Fetch fresh data (name, etc.) now that we are authenticated
+        const freshUser = await apiClient.auth.me()
+        setAuth(response.token, freshUser)
+      } catch (meError) {
+        console.error('Failed to fetch fresh user profile after login:', meError)
+      }
+
       navigate(redirectTo, { replace: true })
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {

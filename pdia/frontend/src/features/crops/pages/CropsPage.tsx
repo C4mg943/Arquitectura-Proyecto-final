@@ -40,6 +40,7 @@ export default function CropsPage() {
   const canManageCrops = user?.rol === 'PRODUCTOR'
   const [crops, setCrops] = useState<CultivoDto[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
+  const [weatherData, setWeatherData] = useState<Record<number, number>>({})
   const [search, setSearch] = useState('')
   const [selectedEstado, setSelectedEstado] = useState<'TODOS' | CultivoDto['estado']>('TODOS')
   const [isLoading, setIsLoading] = useState(true)
@@ -64,6 +65,18 @@ export default function CropsPage() {
       const [cropsResponse, parcelasResponse] = await Promise.all([apiClient.cultivos.list(), apiClient.parcelas.list()])
       setCrops(cropsResponse)
       setParcelas(parcelasResponse)
+
+      const uniqueParcelaIds = Array.from(new Set(cropsResponse.map(c => c.parcelaId)));
+      const weatherMap: Record<number, number> = {};
+      await Promise.all(uniqueParcelaIds.map(async (pId) => {
+        try {
+          const w = await apiClient.weather.getCurrent(pId);
+          weatherMap[pId] = w.probabilidadLluvia;
+        } catch (e) {
+          console.error(`Error loading weather for parcela ${pId}:`, e);
+        }
+      }));
+      setWeatherData(weatherMap);
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
         setError(unknownError.message)
@@ -293,8 +306,10 @@ export default function CropsPage() {
                 </p>
               </div>
               <div className="surface-panel rounded-xl p-2.5">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Parcela</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface">#{crop.parcelaId}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Lluvia</p>
+                <p className="mt-1 text-xs font-semibold text-on-surface">
+                  {weatherData[crop.parcelaId] !== undefined ? `${weatherData[crop.parcelaId]}%` : 'N/A'}
+                </p>
               </div>
               <div className="surface-panel rounded-xl p-2.5">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Siembra</p>

@@ -36,10 +36,26 @@ export class AlertService {
       [data.tipo, data.valor, data.cultivoId]
     );
 
-    const alerta = new Alerta(result.rows[0]);
-    await publishEvent("alerta.creada", { alertId: alerta.getId(), tipo: data.tipo, cultivoId: data.cultivoId });
+    const propietarioRes = await pool.query(
+      `SELECT f.propietario_id FROM fincas f
+       JOIN parcelas p ON f.id = p.finca_id
+       JOIN cultivos c ON p.id = c.parcela_id
+       WHERE c.id = $1`,
+      [data.cultivoId]
+    );
 
-    console.log(`⚠️ Alerta creada: ${data.tipo} - ${data.valor} para cultivo ${data.cultivoId}`);
+    const userId = propietarioRes.rows[0]?.propietario_id;
+
+    const alerta = new Alerta(result.rows[0]);
+    await publishEvent("alerta.creada", { 
+      alertId: alerta.getId(), 
+      tipo: data.tipo, 
+      cultivoId: data.cultivoId,
+      valor: data.valor,
+      userId 
+    });
+
+    console.log(`⚠️ Alerta creada: ${data.tipo} - ${data.valor} para cultivo ${data.cultivoId} (Usuario: ${userId})`);
     return alerta;
   }
 

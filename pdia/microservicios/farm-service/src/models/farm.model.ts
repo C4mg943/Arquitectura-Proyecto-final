@@ -7,6 +7,7 @@ export class Finca {
     area: number;
     tipoFinca: string;
     propietarioId: number;
+    codigoIcaInvima: string | null;
   };
 
   constructor(data: any) {
@@ -18,6 +19,7 @@ export class Finca {
       area: Number(data.area),
       tipoFinca: data.tipo_finca,
       propietarioId: data.propietario_id,
+      codigoIcaInvima: data.codigo_ica_invima,
     };
   }
 
@@ -36,6 +38,9 @@ export class Finca {
   getPropietarioId(): number {
     return this.data.propietarioId;
   }
+  getCodigoIcaInvima(): string | null {
+    return this.data.codigoIcaInvima;
+  }
 
   toJson() {
     return {
@@ -46,6 +51,7 @@ export class Finca {
       area: this.data.area,
       tipoFinca: this.data.tipoFinca,
       propietarioId: this.data.propietarioId,
+      codigoIcaInvima: this.data.codigoIcaInvima,
     };
   }
 }
@@ -103,7 +109,7 @@ export class Parcela {
       hectareas: this.data.hectareas,
       latitud: this.data.latitud,
       longitud: this.data.longitud,
-      FincaId: this.data.FincaId,
+      fincaId: this.data.FincaId,
     };
   }
 }

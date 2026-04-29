@@ -32,6 +32,7 @@ export default function ParcelsPage() {
   const canManageParcelas = user?.rol === 'PRODUCTOR'
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [fincas, setFincas] = useState<FincaDto[]>([])
+  const [selectedFincaId, setSelectedFincaId] = useState<number | 'all'>('all')
   const [filter, setFilter] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -66,19 +67,25 @@ export default function ParcelsPage() {
   }, [loadParcelas])
 
   const filteredParcelas = useMemo(() => {
-    const normalized = filter.trim().toLowerCase()
-    if (!normalized) {
-      return parcelas
+    let result = parcelas
+    
+    if (selectedFincaId !== 'all') {
+      result = result.filter(p => Number(p.fincaId) === Number(selectedFincaId))
     }
 
-    return parcelas.filter((parcela) => {
+    const normalized = filter.trim().toLowerCase()
+    if (!normalized) {
+      return result
+    }
+
+    return result.filter((parcela) => {
       return parcela.nombre.toLowerCase().includes(normalized) || parcela.municipio.toLowerCase().includes(normalized)
     })
-  }, [filter, parcelas])
+  }, [filter, parcelas, selectedFincaId])
 
   const totalHectareas = useMemo(
-    () => parcelas.reduce((sum, parcela) => sum + Number(parcela.hectareas), 0),
-    [parcelas],
+    () => filteredParcelas.reduce((sum, parcela) => sum + Number(parcela.hectareas), 0),
+    [filteredParcelas],
   )
 
   const heading = canManageParcelas ? 'Inventario de Parcelas' : 'Mis Parcelas Asignadas'
@@ -196,15 +203,36 @@ export default function ParcelsPage() {
         </Card>
       </div>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <Input
-          id="parcel-filter"
-          label="Buscar"
-          onChange={(event) => setFilter(event.target.value)}
-          placeholder="Filtrar por nombre o municipio..."
-          type="text"
-          value={filter}
-        />
+      <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <div className="flex-1">
+          <Input
+            id="parcel-filter"
+            label="Buscar"
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="Filtrar por nombre o municipio..."
+            type="text"
+            value={filter}
+          />
+        </div>
+        
+        {canManageParcelas && fincas.length > 0 && (
+          <div className="min-w-[200px]">
+            <label className="mb-2 block text-sm font-medium text-on-surface-variant" htmlFor="finca-selector">
+              Finca
+            </label>
+            <select
+              id="finca-selector"
+              className="w-full rounded-2xl border border-outline-variant/45 bg-surface-container-lowest px-4 py-3 text-sm text-on-surface outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+              onChange={(e) => setSelectedFincaId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              value={selectedFincaId}
+            >
+              <option value="all">Todas las fincas</option>
+              {fincas.map(f => (
+                <option key={f.id} value={f.id}>{f.nombre}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -221,6 +249,7 @@ export default function ParcelsPage() {
         ) : null}
 
 {filteredParcelas.map((parcel) => {
+  console.log("Debug Parcela:", parcel.nombre, "FincaID:", parcel.fincaId, "FincasLoaded:", fincas.length);
   const badge = getStatus(parcel)
   const inicial = parcel.nombre.charAt(0).toUpperCase()
   return (
@@ -259,11 +288,11 @@ export default function ParcelsPage() {
   </div>
 </div>
 
-{/* Footer — finca ID siempre visible */}
+{/* Footer — finca siempre visible */}
 {canManageParcelas ? (
   <div className="flex items-center gap-2 border-t border-outline-variant px-4 py-3">
-    <span className="shrink-0 text-xs text-on-surface-variant">
-      Finca #{parcel.fincaId}
+    <span className="shrink-0 text-xs font-medium text-on-surface-variant">
+      Finca: {fincas.find(f => f.id === parcel.fincaId)?.nombre ?? `Finca #${parcel.fincaId}`}
     </span>
     <div className="flex-1" />
     <Button

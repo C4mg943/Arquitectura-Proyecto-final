@@ -44,6 +44,11 @@ export interface UpdateProfileDto {
   identificacion?: string;
 }
 
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export class AuthService {
   private repository: AuthRepository;
   private readonly maxAttempts = 5;
@@ -168,6 +173,21 @@ const user = await this.repository.create({
     }
 
     return user.toPublicJson();
+  }
+
+  async changePassword(userId: number, data: ChangePasswordDto): Promise<void> {
+    const user = await this.repository.findById(userId);
+    if (!user) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    const isValid = await bcrypt.compare(data.currentPassword, user.getPasswordHash());
+    if (!isValid) {
+      throw new Error("La contraseña actual es incorrecta");
+    }
+
+    const passwordHash = await bcrypt.hash(data.newPassword, 10);
+    await this.repository.updatePassword(userId, passwordHash);
   }
 
   async validateOwner(userId: number): Promise<boolean> {

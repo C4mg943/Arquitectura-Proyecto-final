@@ -24,16 +24,27 @@ export async function subscribeEvents(): Promise<void> {
       const event = JSON.parse(msg.content.toString());
       const routingKey = msg.fields.routingKey;
 
-      const titulo = routingKey === "alerta.creada" ? "Nueva Alerta" : "Nueva Recomendación";
-      const mensaje = routingKey === "alerta.creada"
-        ? `Se ha generado una alerta de tipo ${event.tipo}`
-        : `Se ha generado una recomendación de tipo ${event.tipo}`;
+      if (!event.userId) {
+        console.warn(`Event ${routingKey} ignored: no userId provided`, event);
+        channel?.ack(msg);
+        return;
+      }
+
+      const titulo = routingKey === "alerta.creada" ? "⚠️ Nueva Alerta Climática" : "💡 Nueva Recomendación";
+      let mensaje = "";
+
+      if (routingKey === "alerta.creada") {
+        mensaje = `Se detectó: ${event.tipo} con un valor de ${event.valor}. Revisa tu cultivo #${event.cultivoId}.`;
+      } else {
+        mensaje = `Nueva recomendación de tipo ${event.tipo} para tu cultivo.`;
+      }
 
       await pool.query(
         "INSERT INTO notificaciones (user_id, tipo, titulo, mensaje) VALUES ($1, $2, $3, $4)",
-        [1, routingKey, titulo, mensaje]
+        [event.userId, routingKey, titulo, mensaje]
       );
 
+      console.log(`🔔 Notificación guardada para usuario ${event.userId}: ${titulo}`);
       channel?.ack(msg);
     }
   });

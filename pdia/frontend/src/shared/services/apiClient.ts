@@ -50,6 +50,28 @@ export interface ResetPasswordPayload {
   password: string
 }
 
+export interface CreateRiegoPayload {
+  cultivoId: number
+  fecha: string
+  cantidadAgua: number
+  observaciones?: string
+}
+
+export interface CreateFertilizantePayload {
+  cultivoId: number
+  tipoFertilizante: string
+  fecha: string
+  observaciones?: string
+}
+
+export interface CreatePlagaPayload {
+  cultivoId: number
+  tipoPlaga: string
+  fecha: string
+  accionAplicada: string
+  observaciones?: string
+}
+
 export interface UpdateProfilePayload {
   nombre: string
   identificacion: string
@@ -398,21 +420,22 @@ export const apiClient = {
 
   auth: {
     register: (payload: RegisterPayload) => apiClient.post<AuthResponse>('/api/auth/register', payload),
-    login: async (payload: LoginPayload): Promise<AuthResponse> => {
+    login: async (payload: LoginPayload): Promise<{ token: string; user: AuthUser }> => {
       const loginResponse = await apiClient.post<LoginResponse>('/api/auth/login', payload)
       const jwtPayload = decodeJwtPayload(loginResponse.token)
       if (!jwtPayload) {
         throw new ApiClientError('Token inválido', 500)
       }
+      
       return {
         token: loginResponse.token,
         user: {
           id: jwtPayload.userId,
           email: jwtPayload.email,
-          nombre: '',
-          identificacion: '',
           rol: jwtPayload.rol as AuthUser['rol'],
-          productorId: null,
+          nombre: '', 
+          identificacion: '', 
+          productorId: null, 
         },
       }
     },
@@ -420,8 +443,8 @@ export const apiClient = {
     forgotPassword: (payload: ForgotPasswordPayload) =>
       apiClient.post<ForgotPasswordResponse>('/api/auth/forgot-password', payload),
     resetPassword: (payload: ResetPasswordPayload) => apiClient.post<void>('/api/auth/reset-password', payload),
-    updateProfile: (payload: UpdateProfilePayload) => apiClient.put<AuthUser>('/api/auth/me', payload),
-    updatePassword: (payload: UpdatePasswordPayload) => apiClient.put<void>('/api/auth/me/password', payload),
+    updateProfile: (payload: UpdateProfilePayload) => apiClient.put<AuthUser>('/api/auth/profile', payload),
+    updatePassword: (payload: UpdatePasswordPayload) => apiClient.put<void>('/api/auth/password', payload),
   },
 
   parcelas: {
@@ -441,12 +464,13 @@ export const apiClient = {
   },
 
   operarios: {
-    list: () => apiClient.get<OperarioConParcelasDto[]>('/api/operarios'),
+    list: () => apiClient.get<OperarioConParcelasDto[]>('/api/operarios/con-parcelas'),
+    listAll: () => apiClient.get<AuthUser[]>('/api/operarios'),
     register: (payload: RegisterOperarioPayload) => apiClient.post<AuthUser>('/api/operarios', payload),
-    assign: (payload: AsignarOperarioPayload) =>
-      apiClient.post<AsignacionOperarioDto>('/api/operarios/asignaciones', payload),
+    assign: (operarioId: number, parcelaId: number) =>
+      apiClient.post<{ success: boolean }>(`/api/operarios/${operarioId}/asignar`, { parcelaId }),
     unassign: (operarioId: number, parcelaId: number) =>
-      apiClient.delete<void>(`/api/operarios/asignaciones/${operarioId}/${parcelaId}`),
+      apiClient.post<{ success: boolean }>(`/api/operarios/${operarioId}/desasignar`, { parcelaId }),
   },
 
   cultivos: {
@@ -463,6 +487,9 @@ export const apiClient = {
     findOne: (id: number) => apiClient.get<ActividadDto>(`/api/actividades/${id}`),
     listByCultivo: (cultivoId: number) => apiClient.get<ActividadDto[]>(`/api/actividades/cultivo/${cultivoId}`),
     create: (payload: CreateActividadPayload) => apiClient.post<ActividadDto>('/api/actividades', payload),
+    createRiego: (payload: CreateRiegoPayload) => apiClient.post<ActividadDto>('/api/actividades/riego', payload),
+    createFertilizante: (payload: CreateFertilizantePayload) => apiClient.post<ActividadDto>('/api/actividades/fertilizante', payload),
+    createPlaga: (payload: CreatePlagaPayload) => apiClient.post<ActividadDto>('/api/actividades/plaga', payload),
     update: (id: number, payload: UpdateActividadPayload) =>
       apiClient.put<ActividadDto>(`/api/actividades/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/actividades/${id}`),
@@ -480,6 +507,13 @@ export const apiClient = {
   weather: {
     getCurrent: (parcelaId: number) => apiClient.get<WeatherCurrentDto>(`/api/weather/current/${parcelaId}`),
     getForecast: (parcelaId: number) => apiClient.get<WeatherForecastDayDto[]>(`/api/weather/forecast/${parcelaId}`),
+    getByParcela: (parcelaId: number) => apiClient.get<{
+      temperatura: number;
+      humedad: number;
+      probabilidadLluvia: number;
+      velocidadViento: number;
+      forecast: WeatherForecastDayDto[];
+    }>(`/api/weather/parcela/${parcelaId}`),
   },
 
   notifications: {

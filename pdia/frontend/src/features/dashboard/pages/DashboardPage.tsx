@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { Badge, Button, Card } from '../../../shared/components/common'
 import { apiClient, type CultivoDto, type ParcelaDto } from '../../../shared/services/apiClient'
+import { useAuthStore } from '../../../store/authStore'
 
 function mapStatusLabel(estado: CultivoDto['estado']): string {
   if (estado === 'EN_CRECIMIENTO') return 'Crecimiento'
@@ -20,6 +21,7 @@ interface WeatherData {
 }
 
 export default function DashboardPage() {
+  const user = useAuthStore((state) => state.user)
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [cultivos, setCultivos] = useState<CultivoDto[]>([])
   const [alertas, setAlertas] = useState<{ id: number; tipo: string; valorDetectado: number; fecha: string }[]>([])
@@ -66,8 +68,8 @@ export default function DashboardPage() {
       setError(null)
       try {
         const [parcelasResponse, cultivosResponse, alertasResponse] = await Promise.all([
-          apiClient.parcelas.list(),
-          apiClient.cultivos.list(),
+          apiClient.parcelas.list().catch(() => []),
+          apiClient.cultivos.list().catch(() => []),
           apiClient.alertas.list().catch(() => []),
         ])
 
@@ -75,8 +77,9 @@ export default function DashboardPage() {
         setCultivos(cultivosResponse)
         setAlertas(alertasResponse)
         await loadWeather()
-      } catch {
-        setError('No fue posible cargar el resumen del panel.')
+      } catch (err) {
+        console.error('Dashboard load error:', err)
+        setError('No fue posible cargar algunos datos.')
       } finally {
         setIsLoading(false)
       }
@@ -110,7 +113,7 @@ export default function DashboardPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="text-headline-md text-on-primary-fixed-variant">Inicio</h1>
+        <h1 className="text-headline-md text-on-primary-fixed-variant">Hola, {user?.nombre || 'Usuario'}</h1>
         <p className="mt-1 text-on-surface-variant">
           Estado: <strong className="text-primary">{error ? 'Con novedades' : 'Óptimo'}</strong>
         </p>

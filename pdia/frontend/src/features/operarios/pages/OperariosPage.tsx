@@ -156,10 +156,7 @@ export default function OperariosPage() {
     setIsSubmitting(true)
 
     try {
-      await apiClient.operarios.assign({
-        operarioId: assignOperarioId,
-        parcelaId: assignParcelaId,
-      })
+      await apiClient.operarios.assign(assignOperarioId, assignParcelaId)
       await loadData()
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
