@@ -27,9 +27,9 @@ function getStatus(parcela: ParcelaDto): { variant: 'safe' | 'warning' | 'danger
   return { variant: 'danger', text: 'Prioritario' }
 }
 
-export default function ParcelsPage() {
+export default function ParcelsPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const user = useAuthStore((state) => state.user)
-  const canManageParcelas = user?.rol === 'PRODUCTOR'
+  const canManageParcelas = adminMode || user?.rol === 'PRODUCTOR'
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [fincas, setFincas] = useState<FincaDto[]>([])
   const [selectedFincaId, setSelectedFincaId] = useState<number | 'all'>('all')
@@ -88,10 +88,16 @@ export default function ParcelsPage() {
     [filteredParcelas],
   )
 
-  const heading = canManageParcelas ? 'Inventario de Parcelas' : 'Mis Parcelas Asignadas'
-  const subtitle = canManageParcelas
-    ? 'Gestiona tus activos agrícolas y monitorea rendimiento en todas las ubicaciones registradas.'
-    : 'Consulta las parcelas que tienes asignadas y registra actividades en sus cultivos.'
+  const heading = adminMode
+    ? 'Gestión de Parcelas (Admin)'
+    : canManageParcelas
+      ? 'Inventario de Parcelas'
+      : 'Mis Parcelas Asignadas'
+  const subtitle = adminMode
+    ? 'Administra todas las parcelas del sistema.'
+    : canManageParcelas
+      ? 'Gestiona tus activos agrícolas y monitorea rendimiento en todas las ubicaciones registradas.'
+      : 'Consulta las parcelas que tienes asignadas y registra actividades en sus cultivos.'
 
   const openCreate = () => {
     if (canManageParcelas && fincas.length === 0) {
@@ -119,7 +125,7 @@ export default function ParcelsPage() {
 
   const handleSave = async (payload: CreateParcelaPayload) => {
     if (!canManageParcelas) {
-      setError('Solo los productores pueden crear o editar parcelas.')
+      setError('No tienes permiso para crear o editar parcelas.')
       return
     }
 
@@ -151,7 +157,7 @@ export default function ParcelsPage() {
 
   const handleDelete = async (parcela: ParcelaDto) => {
     if (!canManageParcelas) {
-      setError('Solo los productores pueden eliminar parcelas.')
+      setError('No tienes permiso para eliminar parcelas.')
       return
     }
 
@@ -249,7 +255,6 @@ export default function ParcelsPage() {
         ) : null}
 
 {filteredParcelas.map((parcel) => {
-  console.log("Debug Parcela:", parcel.nombre, "FincaID:", parcel.fincaId, "FincasLoaded:", fincas.length);
   const badge = getStatus(parcel)
   const inicial = parcel.nombre.charAt(0).toUpperCase()
   return (

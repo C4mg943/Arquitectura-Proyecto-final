@@ -9,6 +9,15 @@ const cropService = new CropService();
 
 router.use(authMiddleware);
 
+router.get("/tipos", async (req: AuthRequest, res: Response) => {
+  try {
+    const tipos = await cropService.getTiposCultivo();
+    res.json(tipos);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post(
   "/",
   requireRoles("PRODUCTOR"),
@@ -16,6 +25,7 @@ router.post(
     body("tipoCultivo").notEmpty(),
     body("fechaSiembra").isISO8601(),
     body("estado").isIn(["EN_CRECIMIENTO", "COSECHADO", "AFECTADO"]),
+    body("parcelaId").isInt({ min: 1 }),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -32,9 +42,16 @@ router.post(
 
 router.get("/", async (req: AuthRequest, res: Response) => {
   try {
-    const cultivos = req.user!.rol === "PRODUCTOR"
-      ? await cropService.listByPropietario(req.user!.userId)
-      : await cropService.listByOperario(req.user!.userId);
+    let cultivos;
+    if (req.user!.rol === "ADMINISTRADOR") {
+      cultivos = await cropService.listAll();
+    } else if (req.user!.rol === "TECNICO") {
+      cultivos = await cropService.listByTecnico(req.user!.userId);
+    } else if (req.user!.rol === "PRODUCTOR") {
+      cultivos = await cropService.listByPropietario(req.user!.userId);
+    } else {
+      cultivos = await cropService.listByOperario(req.user!.userId);
+    }
     res.json(cultivos.map((c) => c.toJson()));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -48,6 +65,20 @@ router.get("/search", async (req: AuthRequest, res: Response) => {
 
     const cultivos = await cropService.searchByTipo(req.user!.userId, tipo);
     res.json(cultivos.map((c) => c.toJson()));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/:id", async (req: AuthRequest, res: Response) => {
+  try {
+    const cultivo = await cropService.findById(
+      parseInt(req.params.id),
+      req.user!.userId,
+      req.user!.rol
+    );
+    if (!cultivo) return res.status(404).json({ error: "Cultivo no encontrado" });
+    res.json(cultivo.toJson());
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

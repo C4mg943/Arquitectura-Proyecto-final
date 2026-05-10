@@ -175,7 +175,7 @@ const user = await this.repository.create({
     return user.toPublicJson();
   }
 
-  async changePassword(userId: number, data: ChangePasswordDto): Promise<void> {
+async changePassword(userId: number, data: ChangePasswordDto): Promise<void> {
     const user = await this.repository.findById(userId);
     if (!user) {
       throw new Error("Usuario no encontrado");
@@ -195,7 +195,101 @@ const user = await this.repository.create({
     return user?.getRol() === UserRoles.PRODUCTOR;
   }
 
-private generateToken(user: User): string {
+  async getAllUsers(): Promise<any[]> {
+    const users = await this.repository.findAll();
+    return users.map((user) => user.toPublicJson());
+  }
+
+  async getUsersByRol(rol: string): Promise<any[]> {
+    const users = await this.repository.findByRol(rol);
+    return users.map((user) => user.toPublicJson());
+  }
+
+  async createUser(data: RegisterDto): Promise<AuthResponse> {
+    const existing = await this.repository.findByEmail(data.email);
+    if (existing) {
+      throw new Error("El correo ya está registrado");
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    const rol = data.rol || UserRoles.PRODUCTOR;
+
+    const user = await this.repository.create({
+      nombre: data.nombre,
+      identificacion: data.identificacion,
+      email: data.email,
+      passwordHash,
+      rol,
+      productorId: data.productorId,
+    });
+
+    await publishEvent("user.registered", {
+      userId: user.getId(),
+      email: user.getEmail(),
+      rol: user.getRol(),
+    });
+
+    return {
+      token: this.generateToken(user),
+      user: user.toPublicJson(),
+    };
+  }
+
+  async updateUser(userId: number, data: Partial<RegisterDto>): Promise<any> {
+    if (data.email) {
+      const existing = await this.repository.findByEmail(data.email);
+      if (existing && existing.getId() !== userId) {
+        throw new Error("El correo ya está registrado");
+      }
+    }
+
+    const user = await this.repository.updateUser(userId, {
+      nombre: data.nombre,
+      identificacion: data.identificacion,
+      email: data.email,
+      rol: data.rol,
+      productorId: data.productorId,
+    });
+
+    if (!user) {
+      throw new Error("Usuario no encontrado");
+    }
+
+    return user.toPublicJson();
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    const deleted = await this.repository.deleteUser(userId);
+    if (!deleted) {
+      throw new Error("Usuario no encontrado");
+    }
+  }
+
+  async getAllRoles(): Promise<string[]> {
+    return Object.values(UserRoles);
+  }
+
+  async asignarTecnico(tecnicoId: number, productorId: number, asignadoPorId: number): Promise<void> {
+    await this.repository.asignarTecnico(tecnicoId, productorId, asignadoPorId);
+  }
+
+  async desasignarTecnico(tecnicoId: number, productorId: number): Promise<void> {
+    await this.repository.desasignarTecnico(tecnicoId, productorId);
+  }
+
+  async listTecnicosAsignados(productorId: number): Promise<any[]> {
+    return this.repository.listTecnicosAsignados(productorId);
+  }
+
+  async listProductoresAsignados(tecnicoId: number): Promise<any[]> {
+    return this.repository.listProductoresAsignados(tecnicoId);
+  }
+
+  async getFincasByTecnico(tecnicoId: number): Promise<any[]> {
+    return this.repository.getFincasByTecnico(tecnicoId);
+  }
+
+  private generateToken(user: User): string {
     const secret = process.env.JWT_SECRET || "pdia-secret-key-change-in-production";
 
     return jwt.sign(

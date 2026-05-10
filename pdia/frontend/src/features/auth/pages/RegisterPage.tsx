@@ -114,6 +114,12 @@ export default function RegisterPage() {
                 Iniciar sesión
               </Link>
             </p>
+
+            <p className="mt-4 text-center text-sm">
+              <Link className="text-on-surface-variant hover:text-primary" to="/">
+                ← Volver al inicio
+              </Link>
+            </p>
           </form>
         </Card>
       </div>

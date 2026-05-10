@@ -1,0 +1,26 @@
+{
+  "name": "PDIA - Plataforma Digital de Agricultura Inteligente",
+  "short_name": "PDIA",
+  "description": "Gestión integral de fincas, parcelas, cultivos y actividades agrícolas.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#154212",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

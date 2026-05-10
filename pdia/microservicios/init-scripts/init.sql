@@ -146,9 +146,10 @@ CREATE INDEX IF NOT EXISTS idx_parcelas_finca_id ON parcelas(finca_id);
 CREATE INDEX IF NOT EXISTS idx_asignacion_operario_id ON asignacion_operarios(operario_id);
 CREATE INDEX IF NOT EXISTS idx_asignacion_parcela_id ON asignacion_operarios(parcela_id);
 CREATE INDEX IF NOT EXISTS idx_cultivos_parcela_id ON cultivos(parcela_id);
-CREATE INDEX IF NOT EXISTS idx_cultivos_tipo ON LOWER(cultivos.tipo_cultivo);
+CREATE INDEX IF NOT EXISTS idx_cultivos_tipo ON cultivos (LOWER(tipo_cultivo));
 CREATE INDEX IF NOT EXISTS idx_actividades_cultivo_id ON actividades(cultivo_id);
 CREATE INDEX IF NOT EXISTS idx_actividades_fecha ON actividades(fecha DESC);
+CREATE INDEX IF NOT EXISTS idx_actividades_cultivo_fecha ON actividades(cultivo_id, fecha DESC);
 CREATE INDEX IF NOT EXISTS idx_actividades_creado_por_id ON actividades(creado_por_id);
 CREATE INDEX IF NOT EXISTS idx_alertas_cultivo_id ON alertas(cultivo_id);
 CREATE INDEX IF NOT EXISTS idx_alertas_fecha ON alertas(fecha DESC);
@@ -166,6 +167,70 @@ INSERT INTO umbrales (tipo_cultivo, temperatura_min, temperatura_max, lluvia_max
     ('Tomate', 18, 30, 70, 50),
     ('Papaya', 20, 32, 70, 50),
     ('Banano', 20, 30, 70, 50),
-    ('Café', 18, 28, 70, 50),
-    ('默认值', 15, 35, 70, 50)
+    ('Café', 18, 28, 70, 50)
+ON CONFLICT (tipo_cultivo) DO NOTHING;
+
+-- ============================================
+-- ASIGNACIÓN DE TÉCNICOS A PRODUCTORES
+-- ============================================
+CREATE TABLE IF NOT EXISTS asignacion_tecnicos (
+    id SERIAL PRIMARY KEY,
+    tecnico_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    productor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    asignado_por_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    fecha_asignacion TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (tecnico_id, productor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_asignacion_tecnico_id ON asignacion_tecnicos(tecnico_id);
+CREATE INDEX IF NOT EXISTS idx_asignacion_productor_id ON asignacion_tecnicos(productor_id);
+
+-- ============================================
+-- TABLA DE TIPOS DE CULTIVO (PARAMETRIZACIÓN)
+-- ============================================
+CREATE TABLE IF NOT EXISTS tipos_cultivo (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL UNIQUE,
+    descripcion TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO tipos_cultivo (nombre, descripcion) VALUES
+    ('Maíz', 'Cultivo de grano'),
+    ('Arroz', 'Cultivo de cereal'),
+    ('Frijol', 'Leguminosa de grano'),
+    ('Tomate', 'Hortaliza de fruto'),
+    ('Papaya', 'Fruta tropical'),
+    ('Banano', 'Fruta tropical'),
+    ('Café', 'Cultivo perennial'),
+    ('Cacao', 'Cultivo de grano'),
+    ('Yuca', 'Cultivo de raíz'),
+    ('Ñame', 'Cultivo de raíz')
+ON CONFLICT (nombre) DO NOTHING;
+
+-- ============================================
+-- TABLA DE AUDITORÍA (RF48-RF49)
+-- ============================================
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER NULL REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(80) NOT NULL,
+    entity VARCHAR(80) NOT NULL,
+    entity_id INTEGER NULL,
+    details JSONB NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+
+-- ============================================
+-- UMBRALES EXTENDIDOS (incluyendo tipos restantes)
+-- ============================================
+INSERT INTO umbrales (tipo_cultivo, temperatura_min, temperatura_max, lluvia_max, viento_max) VALUES
+    ('Cacao', 21, 32, 70, 40),
+    ('Yuca', 20, 30, 70, 50),
+    ('Ñame', 22, 32, 75, 45)
 ON CONFLICT (tipo_cultivo) DO NOTHING;

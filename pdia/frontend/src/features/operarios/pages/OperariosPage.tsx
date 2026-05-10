@@ -25,7 +25,7 @@ const initialOperarioForm: OperarioFormState = {
   password: '',
 }
 
-export default function OperariosPage() {
+export default function OperariosPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const [operarios, setOperarios] = useState<OperarioConParcelasDto[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [fincasById, setFincasById] = useState<Map<number, FincaDto>>(new Map())
@@ -80,6 +80,8 @@ export default function OperariosPage() {
     return map
   }, [operarios])
 
+  // Nota: un operario puede trabajar en múltiples fincas, así que mostramos
+  // TODAS las parcelas disponibles, excluyendo solo las que ya tiene asignadas.
   const availableParcelas = useMemo(() => {
     if (!assignOperarioId) {
       return parcelas
@@ -90,13 +92,8 @@ export default function OperariosPage() {
       return parcelas
     }
 
-    const assignedParcelas = selectedOperario.parcelas
-    if (assignedParcelas.length === 0) {
-      return parcelas
-    }
-
-    const allowedFincaId = assignedParcelas[0].fincaId
-    return parcelas.filter((parcela) => parcela.fincaId === allowedFincaId)
+    const assignedIds = new Set(selectedOperario.parcelas.map((p) => p.id))
+    return parcelas.filter((parcela) => !assignedIds.has(parcela.id))
   }, [assignOperarioId, operarioById, parcelas])
 
   useEffect(() => {
@@ -198,9 +195,13 @@ export default function OperariosPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="text-headline-md text-on-primary-fixed-variant">Gestión de Operarios</h1>
+        <h1 className="text-headline-md text-on-primary-fixed-variant">
+          {adminMode ? 'Gestión de Operarios (Admin)' : 'Gestión de Operarios'}
+        </h1>
         <p className="mt-1 max-w-2xl text-on-surface-variant">
-          Registra operarios y asígnalos a parcelas. Un operario puede trabajar en varias parcelas de una misma finca.
+          {adminMode
+            ? 'Administra todos los operarios del sistema y sus asignaciones a parcelas.'
+            : 'Registra operarios y asígnalos a parcelas. Un operario puede trabajar en varias parcelas de una misma finca.'}
         </p>
       </header>
 

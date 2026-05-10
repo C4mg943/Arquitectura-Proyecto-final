@@ -99,4 +99,45 @@ export class WeatherService {
       console.error("❌ Error in pollAllParcelas:", error);
     }
   }
+
+  /**
+   * Poll de clima para una parcela concreta, incluso sin cultivos.
+   * Se usa como respuesta al evento `parcela.created` para no esperar al próximo tick
+   * del poller global (cada 60 min).
+   */
+  async pollParcelaById(parcelaId: number): Promise<void> {
+    try {
+      const result = await pool.query(
+        `SELECT p.id, p.latitud, p.longitud, c.id AS cultivo_id
+         FROM parcelas p
+         LEFT JOIN cultivos c ON c.parcela_id = p.id
+         WHERE p.id = $1`,
+        [parcelaId],
+      );
+
+      if (result.rows.length === 0) return;
+
+      // Si la parcela aún no tiene cultivos, igual publicamos un evento sin cultivoId
+      // para que quien quiera escuchar (dashboards) tenga el dato fresco.
+      for (const row of result.rows) {
+        try {
+          const weather = await this.fetchWeather(Number(row.latitud), Number(row.longitud));
+          await publishEvent("weather.updated", {
+            parcelaId: row.id,
+            cultivoId: row.cultivo_id ?? null,
+            temperature: weather.temperatura,
+            humedad: weather.humedad,
+            probabilidadLluvia: weather.probabilidadLluvia,
+            velocidadViento: weather.velocidadViento,
+            timestamp: weather.timestamp.toISOString(),
+          });
+          console.log(`📡 Weather on-demand para parcela ${row.id}: ${weather.temperatura}°C`);
+        } catch (error) {
+          console.error(`❌ Error on-demand poll parcela ${row.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error en pollParcelaById:", error);
+    }
+  }
 }

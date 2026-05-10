@@ -9,12 +9,12 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"      # AMQP
-      - "15672:15672"    # Management UI
+      - "5672:5672" # AMQP
+      - "15672:15672" # Management UI
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -30,14 +30,14 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pdia_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,8 +51,8 @@ services:
       dockerfile: Dockerfile
     container_name: pdia-api-gateway
     ports:
-      - "8000:80"      # HTTP
-      - "8443:443"      # HTTPS
+      - "8000:80" # HTTP
+      - "8443:443" # HTTPS
     depends_on:
       auth-service:
         condition: service_healthy
@@ -106,7 +106,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -140,7 +140,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3002/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -174,7 +174,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3003/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -208,7 +208,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3004/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -242,7 +242,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3005/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -277,7 +277,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3006/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3006/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -312,7 +312,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3007/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3007/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -342,7 +342,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3008/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3008/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -374,7 +374,7 @@ services:
     networks:
       - pdia-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3009/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))"]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3009/health', (res) => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', (e) => process.exit(1))" ]
       interval: 30s
       timeout: 10s
       retries: 5

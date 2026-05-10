@@ -121,15 +121,18 @@ RABBITMQ_PORT=5672
 
 ### Eventos Asíncronos (RabbitMQ)
 
-| Evento | Publicador | Suscriptor |
-|--------|------------|------------|
-| `user.registered` | auth-service | - |
-| `parcela.created` | farm-service | - |
-| `cultivo.created` | crop-service | - |
-| `actividad.created` | activity-service | recommendation-service |
-| `weather.updated` | weather-service | alert-service, recommendation-service |
-| `alerta.creada` | alert-service | notification-service |
-| `recommendation.creada` | recommendation-service | notification-service |
+Exchange: `pdia.events` (topic, durable).
+
+| Evento | Publicador | Suscriptor | Propósito |
+|--------|------------|------------|-----------|
+| `user.registered` | auth-service, farm-service (operarios) | notification-service | Notificación de bienvenida |
+| `parcela.created` | farm-service | weather-service | Forzar polling de clima inmediato para la parcela nueva |
+| `cultivo.created` | crop-service | - | (reservado) |
+| `actividad.created` | activity-service | recommendation-service | Generar recomendaciones reactivas (ej. plaga) |
+| `weather.updated` | weather-service | alert-service, recommendation-service | Disparar alertas y recomendaciones basadas en clima |
+| `alerta.creada` | alert-service | notification-service | Guardar notificación al productor |
+| `recommendation.creada` | recommendation-service | notification-service | Guardar notificación al productor |
+| `operario.asignado` | farm-service | notification-service | Notificar al operario sobre su nueva asignación |
 
 ### Construir y Desplegar
 

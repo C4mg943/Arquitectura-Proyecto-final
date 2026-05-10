@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/dashboard'
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -31,17 +31,7 @@ export default function LoginPage() {
     setIsSubmitting(true)
     try {
       const response = await apiClient.auth.login(parsed.data)
-      // 1. Save token and basic data first so future requests have Authorization header
       setAuth(response.token, response.user)
-      
-      try {
-        // 2. Fetch fresh data (name, etc.) now that we are authenticated
-        const freshUser = await apiClient.auth.me()
-        setAuth(response.token, freshUser)
-      } catch (meError) {
-        console.error('Failed to fetch fresh user profile after login:', meError)
-      }
-
       navigate(redirectTo, { replace: true })
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
@@ -111,6 +101,12 @@ export default function LoginPage() {
             ¿No tienes una cuenta?
             <Link className="ml-1 font-bold text-primary hover:underline" to="/register">
               Registrarse
+            </Link>
+          </p>
+
+          <p className="mt-4 text-center text-sm">
+            <Link className="text-on-surface-variant hover:text-primary" to="/">
+              ← Volver al inicio
             </Link>
           </p>
         </Card>

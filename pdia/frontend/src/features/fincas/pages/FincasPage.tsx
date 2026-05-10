@@ -47,7 +47,7 @@ const initialForm: FincaFormState = {
   codigoIcaInvima: '',
 }
 
-export default function FincasPage() {
+export default function FincasPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const [fincas, setFincas] = useState<FincaDto[]>([])
   const [filter, setFilter] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -196,9 +196,13 @@ export default function FincasPage() {
     <section className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-headline-md text-on-primary-fixed-variant">Gestión de Fincas</h1>
+          <h1 className="text-headline-md text-on-primary-fixed-variant">
+            {adminMode ? 'Gestión de Fincas (Admin)' : 'Gestión de Fincas'}
+          </h1>
           <p className="mt-1 max-w-2xl text-on-surface-variant">
-            Organiza tus unidades productivas. Cada finca puede contener varias parcelas y operarios asignados.
+            {adminMode
+              ? 'Administra todas las fincas del sistema.'
+              : 'Organiza tus unidades productivas. Cada finca puede contener varias parcelas y operarios asignados.'}
           </p>
         </div>
         <Button leadingIcon="add_circle" onClick={openCreate} variant="primary">

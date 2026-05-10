@@ -10,13 +10,11 @@ export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [resetUrl, setResetUrl] = useState<string | null>(null)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
     setSuccess(null)
-    setResetUrl(null)
 
     const parsed = forgotPasswordSchema.safeParse({ email })
     if (!parsed.success) {
@@ -26,11 +24,8 @@ export default function ForgotPasswordPage() {
 
     setIsSubmitting(true)
     try {
-      const response = await apiClient.auth.forgotPassword(parsed.data)
-      setSuccess('Si el correo existe, te enviamos un enlace de recuperación.')
-      if (response.resetUrl) {
-        setResetUrl(response.resetUrl)
-      }
+      await apiClient.auth.forgotPassword(parsed.data)
+      setSuccess('Si el correo existe, te enviamos un enlace de recuperación. Revisa tu bandeja de entrada.')
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
         setError(unknownError.message)
@@ -68,15 +63,6 @@ export default function ForgotPasswordPage() {
 
             {success ? (
               <p className="rounded-xl bg-primary-fixed px-3 py-2 text-sm font-semibold text-on-primary-fixed">{success}</p>
-            ) : null}
-
-            {resetUrl ? (
-              <p className="rounded-xl bg-secondary-container px-3 py-2 text-sm font-semibold text-on-secondary-container">
-                Enlace de desarrollo:{' '}
-                <a className="underline" href={resetUrl}>
-                  Abrir recuperación
-                </a>
-              </p>
             ) : null}
 
             <Button className="w-full" disabled={isSubmitting} type="submit" variant="primary">

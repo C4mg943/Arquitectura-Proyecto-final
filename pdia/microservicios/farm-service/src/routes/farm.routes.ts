@@ -8,9 +8,11 @@ const farmService = new FarmService();
 
 router.use(authMiddleware);
 
-router.get("/finca", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/finca", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
-    const fincas = await farmService.listFincas(req.user!.userId);
+    const fincas = req.user!.rol === "ADMINISTRADOR"
+      ? await farmService.listAllFincas()
+      : await farmService.listFincas(req.user!.userId);
     res.json(fincas.map((f) => f.toJson()));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -19,7 +21,7 @@ router.get("/finca", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Re
 
 router.post(
   "/finca",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   [
     body("nombre").notEmpty(),
     body("ubicacion").notEmpty(),
@@ -32,7 +34,8 @@ router.post(
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const Finca = await farmService.createFinca(req.user!.userId, req.body);
+      const userId = req.user!.rol === "ADMINISTRADOR" ? null : req.user!.userId;
+      const Finca = await farmService.createFinca(userId, req.body);
       res.status(201).json(Finca.toJson());
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -40,7 +43,7 @@ router.post(
   }
 );
 
-router.delete("/finca/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.delete("/finca/:id", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
     const deleted = await farmService.deleteFinca(parseInt(req.params.id), req.user!.userId);
     if (!deleted) return res.status(404).json({ error: "Finca no encontrada" });
@@ -50,11 +53,56 @@ router.delete("/finca/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, 
   }
 });
 
-router.get("/parcela", async (req: AuthRequest, res: Response) => {
+router.get("/finca/:id", requireRoles("PRODUCTOR", "OPERARIO", "TECNICO", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
-    const parcelas = req.user!.rol === "PRODUCTOR"
-      ? await farmService.listParcelas(req.user!.userId)
-      : await farmService.listParcelasByOperario(req.user!.userId);
+    const fincaId = parseInt(req.params.id);
+    const propietarioId = req.user!.rol === "ADMINISTRADOR" ? null : req.user!.userId;
+    const finca = await farmService.findFinca(fincaId, propietarioId);
+    if (!finca) return res.status(404).json({ error: "Finca no encontrada" });
+    res.json(finca.toJson());
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put(
+  "/finca/:id",
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
+  [
+    body("nombre").optional().notEmpty(),
+    body("ubicacion").optional().notEmpty(),
+    body("area").optional().isFloat({ min: 0.01 }),
+    body("tipoFinca").optional().isIn(["AGRICOLA", "GANADERA", "MIXTA", "FORESTAL"]),
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const fincaId = parseInt(req.params.id);
+      const propietarioId = req.user!.rol === "ADMINISTRADOR" ? null : req.user!.userId;
+      const finca = await farmService.updateFinca(fincaId, propietarioId, req.body);
+      if (!finca) return res.status(404).json({ error: "Finca no encontrada" });
+      res.json(finca.toJson());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.get("/parcela", requireRoles("PRODUCTOR", "OPERARIO", "ADMINISTRADOR", "TECNICO"), async (req: AuthRequest, res: Response) => {
+  try {
+    let parcelas;
+    if (req.user!.rol === "ADMINISTRADOR") {
+      parcelas = await farmService.listAllParcelas();
+    } else if (req.user!.rol === "TECNICO") {
+      parcelas = await farmService.listParcelasByTecnico(req.user!.userId);
+    } else if (req.user!.rol === "PRODUCTOR") {
+      parcelas = await farmService.listParcelas(req.user!.userId);
+    } else {
+      parcelas = await farmService.listParcelasByOperario(req.user!.userId);
+    }
     res.json(parcelas.map((p) => p.toJson()));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -63,7 +111,7 @@ router.get("/parcela", async (req: AuthRequest, res: Response) => {
 
 router.post(
   "/parcela",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   [
     body("nombre").notEmpty(),
     body("municipio").notEmpty(),
@@ -84,7 +132,7 @@ router.post(
 
 router.put(
   "/parcela/:id",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       const parcela = await farmService.updateParcela(
@@ -100,7 +148,7 @@ router.put(
   }
 );
 
-router.delete("/parcela/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.delete("/parcela/:id", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
     const deleted = await farmService.deleteParcela(parseInt(req.params.id), req.user!.userId);
     if (!deleted) return res.status(404).json({ error: "Parcela no encontrada" });

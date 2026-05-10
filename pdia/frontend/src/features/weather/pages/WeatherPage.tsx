@@ -276,17 +276,6 @@ export default function WeatherPage() {
               value={currentWeather.probabilidadLluvia}
               unit="%"
             />
-            <WeatherMetric
-              icon="compressed"
-              label="Presión"
-              value={1013}
-              unit="hPa"
-            />
-            <WeatherMetric
-              icon="wb_sunny"
-              label="Índice UV"
-              value={6}
-            />
           </div>
         </div>
       ) : null}
@@ -322,15 +311,6 @@ export default function WeatherPage() {
                     >
                       {day.probabilidadLluvia}%
                     </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1 text-on-surface-variant">
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
-                        air
-                      </span>
-                      Viento
-                    </span>
-                    <span className="font-semibold text-on-surface">-- km/h</span>
                   </div>
                 </div>
               </div>

@@ -9,7 +9,7 @@ router.use(authMiddleware);
 
 router.post(
   "/",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       const operario = await operarioService.registerOperario(
@@ -23,18 +23,18 @@ router.post(
   }
 );
 
-router.get("/", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
-    const operariosConParcelas = await operarioService.listOperariosConParcelas(req.user!.userId);
+    const operariosConParcelas = await operarioService.listAllOperariosConParcelas();
     res.json(operariosConParcelas);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.get("/con-parcelas", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/con-parcelas", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
-    const operariosConParcelas = await operarioService.listOperariosConParcelas(req.user!.userId);
+    const operariosConParcelas = await operarioService.listAllOperariosConParcelas();
     res.json(operariosConParcelas);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -43,7 +43,7 @@ router.get("/con-parcelas", requireRoles("PRODUCTOR"), async (req: AuthRequest, 
 
 router.post(
   "/asignaciones",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       await operarioService.asignarAParcela(
@@ -60,7 +60,7 @@ router.post(
 
 router.post(
   "/:operarioId/asignar",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       await operarioService.asignarAParcela(
@@ -77,7 +77,7 @@ router.post(
 
 router.post(
   "/:operarioId/desasignar",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       await operarioService.desasignarDeParcela(
@@ -94,7 +94,7 @@ router.post(
 
 router.delete(
   "/asignaciones/:operarioId/:parcelaId",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       await operarioService.desasignarDeParcela(

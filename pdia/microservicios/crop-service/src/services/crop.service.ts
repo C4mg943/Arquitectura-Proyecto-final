@@ -11,6 +11,17 @@ export class CropService {
     parcelaId: number;
     usuarioId: number;
   }): Promise<Cultivo> {
+    // Validar que la parcela pertenezca a una finca del productor antes de crear el cultivo
+    const ownership = await pool.query(
+      `SELECT 1 FROM parcelas p
+       JOIN fincas f ON p.finca_id = f.id
+       WHERE p.id = $1 AND f.propietario_id = $2`,
+      [data.parcelaId, data.usuarioId]
+    );
+    if (ownership.rowCount === 0) {
+      throw new Error("La parcela no existe o no pertenece al productor");
+    }
+
     const result = await pool.query(
       `INSERT INTO cultivos (tipo_cultivo, fecha_siembra, estado, observaciones, parcela_id)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
@@ -43,6 +54,26 @@ export class CropService {
        WHERE ao.operario_id = $1
        ORDER BY c.created_at DESC`,
       [operarioId]
+    );
+    return result.rows.map((row) => new Cultivo(row));
+  }
+
+  async listAll(): Promise<Cultivo[]> {
+    const result = await pool.query(
+      "SELECT * FROM cultivos ORDER BY created_at DESC"
+    );
+    return result.rows.map((row) => new Cultivo(row));
+  }
+
+  async listByTecnico(tecnicoId: number): Promise<Cultivo[]> {
+    const result = await pool.query(
+      `SELECT c.* FROM cultivos c
+       JOIN parcelas p ON c.parcela_id = p.id
+       JOIN fincas f ON p.finca_id = f.id
+       JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+       WHERE at.tecnico_id = $1
+       ORDER BY c.created_at DESC`,
+      [tecnicoId]
     );
     return result.rows.map((row) => new Cultivo(row));
   }
@@ -108,5 +139,45 @@ export class CropService {
       [cultivoId]
     );
     return result.rows[0] || null;
+  }
+
+  async getTiposCultivo(): Promise<{ id: number; nombre: string; descripcion: string | null }[]> {
+    const result = await pool.query(
+      "SELECT id, nombre, descripcion FROM tipos_cultivo ORDER BY nombre"
+    );
+    return result.rows;
+  }
+
+  async findById(id: number, userId: number, rol: string): Promise<Cultivo | null> {
+    let result;
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query("SELECT * FROM cultivos WHERE id = $1", [id]);
+    } else if (rol === "PRODUCTOR") {
+      result = await pool.query(
+        `SELECT c.* FROM cultivos c
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE c.id = $1 AND f.propietario_id = $2`,
+        [id, userId]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT c.* FROM cultivos c
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE c.id = $1 AND at.tecnico_id = $2`,
+        [id, userId]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT c.* FROM cultivos c
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+         WHERE c.id = $1 AND ao.operario_id = $2`,
+        [id, userId]
+      );
+    }
+    return result.rows[0] ? new Cultivo(result.rows[0]) : null;
   }
 }

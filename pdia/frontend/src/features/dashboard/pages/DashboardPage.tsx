@@ -29,26 +29,22 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadWeather = async () => {
+  const loadWeather = async (parcelaId: number | null) => {
+    if (!parcelaId) {
+      setWeather(null)
+      return
+    }
     try {
-      const parcelasResponse = await apiClient.parcelas.list()
-      if (parcelasResponse.length === 0) return
-
-      const parcela = parcelasResponse[0]
-      const lat = Number(parcela.latitud)
-      const lon = Number(parcela.longitud)
-
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
-      )
-      const data = await res.json()
-
-      const temp = Math.round(data.current.temperature_2m)
-      const wind = Math.round(data.current.wind_speed_10m)
+      const current = await apiClient.weather.getCurrent(parcelaId)
+      const temp = Math.round(current.temperatura)
+      const wind = Math.round(current.velocidadViento)
 
       let condicion = 'Parcialmente nublado'
       let icon = 'partly_cloudy_day'
-      if (temp > 30) {
+      if (current.probabilidadLluvia > 60) {
+        condicion = 'Lluvia probable'
+        icon = 'rainy'
+      } else if (temp > 30) {
         condicion = 'Caluroso'
         icon = 'wb_sunny'
       } else if (temp < 20) {
@@ -56,7 +52,7 @@ export default function DashboardPage() {
         icon = 'cool_mode'
       }
 
-      setWeather({ temperatura: temp, humedad: data.current.relative_humidity_2m, viento: wind, condicion, icon })
+      setWeather({ temperatura: temp, humedad: current.humedad, viento: wind, condicion, icon })
     } catch {
       setWeather(null)
     }
@@ -76,7 +72,7 @@ export default function DashboardPage() {
         setParcelas(parcelasResponse)
         setCultivos(cultivosResponse)
         setAlertas(alertasResponse)
-        await loadWeather()
+        await loadWeather(parcelasResponse[0]?.id ?? null)
       } catch (err) {
         console.error('Dashboard load error:', err)
         setError('No fue posible cargar algunos datos.')

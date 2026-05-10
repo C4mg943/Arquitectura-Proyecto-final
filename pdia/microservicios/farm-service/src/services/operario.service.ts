@@ -15,7 +15,14 @@ export class OperarioService {
       [data.nombre, data.identificacion, data.email, passwordHash, propietarioId]
     );
 
-    await publishEvent("operario.registered", { userId: result.rows[0].id, propietarioId });
+    // Publicamos user.registered (consumido por notification-service → notificación de bienvenida)
+    await publishEvent("user.registered", {
+      userId: result.rows[0].id,
+      email: result.rows[0].email,
+      nombre: result.rows[0].nombre,
+      rol: "OPERARIO",
+      propietarioId,
+    });
 
     return result.rows[0];
   }
@@ -43,6 +50,37 @@ export class OperarioService {
        JOIN fincas f ON p.finca_id = f.id
        WHERE f.propietario_id = $1`,
       [propietarioId]
+    );
+
+    const parcelasByOperario = new Map<number, any[]>();
+    parcelas.rows.forEach((parcela: any) => {
+      const list = parcelasByOperario.get(parcela.operario_id) || [];
+      list.push({
+        id: parcela.id,
+        nombre: parcela.nombre,
+        municipio: parcela.municipio,
+        hectareas: parcela.hectareas,
+        fincaId: parcela.finca_id,
+      });
+      parcelasByOperario.set(parcela.operario_id, list);
+    });
+
+    return operarios.rows.map((op: any) => ({
+      operario: op,
+      parcelas: parcelasByOperario.get(op.id) || [],
+    }));
+  }
+
+  async listAllOperariosConParcelas() {
+    const operarios = await pool.query(
+      `SELECT id, nombre, identificacion, email, rol FROM users
+       WHERE rol = 'OPERARIO'`
+    );
+
+    const parcelas = await pool.query(
+      `SELECT p.id, p.nombre, p.municipio, p.hectareas, p.finca_id, ao.operario_id
+       FROM parcelas p
+       JOIN asignacion_operarios ao ON p.id = ao.parcela_id`
     );
 
     const parcelasByOperario = new Map<number, any[]>();

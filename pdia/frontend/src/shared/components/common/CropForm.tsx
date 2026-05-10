@@ -1,6 +1,7 @@
-import { type FormEvent, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 
 import type { CreateCultivoPayload, CultivoDto, ParcelaDto } from '../../services/apiClient'
+import { apiClient } from '../../services/apiClient'
 import { cultivoSchema } from '../../utils/validators'
 import Button from './Button'
 import Input from './Input'
@@ -53,6 +54,11 @@ export default function CropForm({ mode, parcelas, initialValue, isSubmitting, o
 
   const [form, setForm] = useState<CropFormState>(seedForm)
   const [error, setError] = useState<string | null>(null)
+  const [tiposCultivo, setTiposCultivo] = useState<{ id: number; nombre: string; descripcion: string | null }[]>([])
+
+  useEffect(() => {
+    apiClient.cultivos.getTipos().then(setTiposCultivo).catch(console.error)
+  }, [])
 
   const parcelOptions = useMemo(() => parcelas.map((parcela) => ({ id: parcela.id, nombre: parcela.nombre })), [parcelas])
 
@@ -87,14 +93,22 @@ export default function CropForm({ mode, parcelas, initialValue, isSubmitting, o
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              id="crop-tipo"
-              label="Tipo de cultivo"
-              onChange={(event) => setForm((current) => ({ ...current, tipoCultivo: event.target.value }))}
-              placeholder="Tomate"
-              type="text"
-              value={form.tipoCultivo}
-            />
+            <label className="space-y-2" htmlFor="crop-tipo">
+              <span className="text-label-md block text-on-surface-variant">Tipo de cultivo</span>
+              <select
+                id="crop-tipo"
+                className="w-full rounded-2xl border border-outline-variant/45 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+                onChange={(event) => setForm((current) => ({ ...current, tipoCultivo: event.target.value }))}
+                value={form.tipoCultivo}
+              >
+                <option value="">Selecciona un tipo de cultivo</option>
+                {tiposCultivo.map((tipo) => (
+                  <option key={tipo.id} value={tipo.nombre}>
+                    {tipo.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <label className="space-y-2" htmlFor="crop-parcela">
               <span className="text-label-md block text-on-surface-variant">Parcela</span>

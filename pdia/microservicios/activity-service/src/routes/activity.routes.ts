@@ -133,6 +133,44 @@ router.get("/filter", async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.get("/:id", async (req: AuthRequest, res: Response) => {
+  try {
+    const actividad = await activityService.findById(
+      parseInt(req.params.id),
+      req.user!.userId,
+      req.user!.rol
+    );
+    if (!actividad) return res.status(404).json({ error: "Actividad no encontrada" });
+    res.json(actividad.toJson());
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put(
+  "/:id",
+  requireRoles("PRODUCTOR", "OPERARIO"),
+  [
+    body("tipo").optional().isIn(["RIEGO", "FERTILIZACION", "PLAGA", "OBSERVACION"]),
+    body("fecha").optional().isISO8601(),
+    body("descripcion").optional().notEmpty(),
+  ],
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const actividad = await activityService.update(
+        parseInt(req.params.id),
+        req.user!.userId,
+        req.user!.rol,
+        req.body
+      );
+      if (!actividad) return res.status(404).json({ error: "Actividad no encontrada" });
+      res.json(actividad.toJson());
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
 router.delete("/:id", requireRoles("PRODUCTOR", "OPERARIO"), async (req: AuthRequest, res: Response) => {
   try {
     const deleted = await activityService.delete(

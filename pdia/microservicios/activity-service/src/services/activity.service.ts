@@ -57,12 +57,14 @@ export class ActivityService {
   async listByUsuario(usuarioId: number, rol: string): Promise<Actividad[]> {
     let result;
     if (rol === "PRODUCTOR") {
+      // El productor ve todas las actividades de sus fincas,
+      // incluidas las creadas por sus operarios.
       result = await pool.query(
         `SELECT a.* FROM actividades a
          JOIN cultivos c ON a.cultivo_id = c.id
          JOIN parcelas p ON c.parcela_id = p.id
          JOIN fincas f ON p.finca_id = f.id
-         WHERE a.creado_por_id = $1 AND f.propietario_id = $1
+         WHERE f.propietario_id = $1
          ORDER BY a.fecha DESC`,
         [usuarioId]
       );
@@ -81,8 +83,94 @@ export class ActivityService {
   }
 
   async filterByTipo(usuarioId: number, rol: string, tipo: TipoActividad): Promise<Actividad[]> {
-    const actividades = await this.listByUsuario(usuarioId, rol);
-    return actividades.filter((a) => a.getTipo() === tipo);
+    let result;
+    if (rol === "PRODUCTOR") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE f.propietario_id = $1 AND a.tipo = $2
+         ORDER BY a.fecha DESC`,
+        [usuarioId, tipo]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+         WHERE ao.operario_id = $1 AND a.tipo = $2
+         ORDER BY a.fecha DESC`,
+        [usuarioId, tipo]
+      );
+    }
+    return result.rows.map((row) => new Actividad(row));
+  }
+
+  async findById(id: number, usuarioId: number, rol: string): Promise<Actividad | null> {
+    let result;
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query("SELECT * FROM actividades WHERE id = $1", [id]);
+    } else if (rol === "PRODUCTOR") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE a.id = $1 AND f.propietario_id = $2`,
+        [id, usuarioId]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+         WHERE a.id = $1 AND ao.operario_id = $2`,
+        [id, usuarioId]
+      );
+    }
+    return result.rows[0] ? new Actividad(result.rows[0]) : null;
+  }
+
+  async update(
+    id: number,
+    usuarioId: number,
+    rol: string,
+    data: Partial<{
+      tipo: TipoActividad;
+      fecha: string;
+      descripcion: string;
+      datos: object;
+    }>
+  ): Promise<Actividad | null> {
+    // Verificar ownership antes de actualizar
+    const existing = await this.findById(id, usuarioId, rol);
+    if (!existing) return null;
+
+    // Operario solo puede editar actividades que él creó
+    if (rol === "OPERARIO" && existing.getCreadoPorId() !== usuarioId) {
+      throw new Error("No tienes permiso para editar esta actividad");
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.tipo !== undefined) { updates.push(`tipo = $${idx++}`); values.push(data.tipo); }
+    if (data.fecha !== undefined) { updates.push(`fecha = $${idx++}`); values.push(data.fecha); }
+    if (data.descripcion !== undefined) { updates.push(`descripcion = $${idx++}`); values.push(data.descripcion); }
+    if (data.datos !== undefined) { updates.push(`datos = $${idx++}`); values.push(data.datos); }
+
+    if (updates.length === 0) return existing;
+
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE actividades SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    return result.rows[0] ? new Actividad(result.rows[0]) : null;
   }
 
   async delete(id: number, usuarioId: number, rol: string): Promise<boolean> {

@@ -3,8 +3,9 @@ import express from "express";
 import cors from "cors";
 import { weatherRouter } from "./routes/weather.routes.js";
 import { connectDb } from "./config/db.js";
-import { connectRabbitMQ } from "./config/rabbitmq.js";
+import { connectRabbitMQ, subscribeToEvents } from "./config/rabbitmq.js";
 import { startWeatherPoller } from "./jobs/weather.poller.js";
+import { WeatherService } from "./services/weather.service.js";
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -25,6 +26,16 @@ async function start() {
 
     await connectRabbitMQ();
     console.log("✅ RabbitMQ connected");
+
+    // Suscribirse a parcela.created para tener clima disponible sin esperar al poller global.
+    const weatherService = new WeatherService();
+    await subscribeToEvents(["parcela.created"], async (routingKey, payload) => {
+      if (routingKey !== "parcela.created") return;
+      const parcelaId = typeof payload.parcelaId === "number" ? payload.parcelaId : null;
+      if (!parcelaId) return;
+      console.log(`📥 Evento parcela.created recibido para parcela ${parcelaId}`);
+      await weatherService.pollParcelaById(parcelaId);
+    });
 
     startWeatherPoller();
 

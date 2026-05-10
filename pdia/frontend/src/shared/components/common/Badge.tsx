@@ -2,7 +2,14 @@ import type { ComponentPropsWithoutRef } from 'react'
 
 import { cn } from '../../utils/classNames'
 
-type BadgeVariant = 'safe' | 'warning' | 'danger' | 'neutral'
+type BadgeVariant =
+  | 'safe'
+  | 'warning'
+  | 'danger'
+  | 'neutral'
+  | 'primary'
+  | 'success'
+  | 'error'
 
 interface BadgeProps extends ComponentPropsWithoutRef<'span'> {
   variant?: BadgeVariant
@@ -13,6 +20,10 @@ const variantClasses: Record<BadgeVariant, string> = {
   warning: 'bg-secondary-container text-on-secondary-container ring-1 ring-secondary/25',
   danger: 'bg-error-container text-on-error-container ring-1 ring-error/20',
   neutral: 'bg-surface-container-high text-on-surface-variant ring-1 ring-outline-variant/60',
+  // Alias / nuevos estilos
+  primary: 'bg-primary-container text-on-primary-container ring-1 ring-primary/25',
+  success: 'bg-primary-fixed text-on-primary-fixed ring-1 ring-primary/15',
+  error: 'bg-error-container text-on-error-container ring-1 ring-error/20',
 }
 
 export default function Badge({ variant = 'neutral', className, children, ...props }: BadgeProps) {

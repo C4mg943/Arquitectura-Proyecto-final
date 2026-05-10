@@ -3,7 +3,7 @@ import { Finca, Parcela } from "../models/farm.model.js";
 import { publishEvent } from "../config/rabbitmq.js";
 
 export class FarmService {
-  async createFinca(propietarioId: number, data: {
+  async createFinca(propietarioId: number | null, data: {
     nombre: string;
     ubicacion: string;
     descripcion?: string;
@@ -27,12 +27,83 @@ export class FarmService {
     return result.rows.map((row) => new Finca(row));
   }
 
+  async listAllFincas(): Promise<Finca[]> {
+    const result = await pool.query(
+      "SELECT * FROM fincas ORDER BY created_at DESC"
+    );
+    return result.rows.map((row) => new Finca(row));
+  }
+
+  async listAllParcelas(): Promise<Parcela[]> {
+    const result = await pool.query(
+      "SELECT * FROM parcelas ORDER BY created_at DESC"
+    );
+    return result.rows.map((row) => new Parcela(row));
+  }
+
+  async listParcelasByTecnico(tecnicoId: number): Promise<Parcela[]> {
+    const result = await pool.query(
+      `SELECT p.* FROM parcelas p
+       JOIN fincas f ON p.finca_id = f.id
+       JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+       WHERE at.tecnico_id = $1
+       ORDER BY p.created_at DESC`,
+      [tecnicoId]
+    );
+    return result.rows.map((row) => new Parcela(row));
+  }
+
   async deleteFinca(fincaId: number, propietarioId: number): Promise<boolean> {
     const result = await pool.query(
       "DELETE FROM fincas WHERE id = $1 AND propietario_id = $2 RETURNING id",
       [fincaId, propietarioId]
     );
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async findFinca(fincaId: number, propietarioId: number | null): Promise<Finca | null> {
+    const result = propietarioId === null
+      ? await pool.query("SELECT * FROM fincas WHERE id = $1", [fincaId])
+      : await pool.query("SELECT * FROM fincas WHERE id = $1 AND propietario_id = $2", [fincaId, propietarioId]);
+    return result.rows[0] ? new Finca(result.rows[0]) : null;
+  }
+
+  async updateFinca(
+    fincaId: number,
+    propietarioId: number | null,
+    data: Partial<{
+      nombre: string;
+      ubicacion: string;
+      descripcion: string;
+      area: number;
+      tipoFinca: string;
+      codigoIcaInvima: string;
+    }>
+  ): Promise<Finca | null> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.nombre !== undefined) { updates.push(`nombre = $${idx++}`); values.push(data.nombre); }
+    if (data.ubicacion !== undefined) { updates.push(`ubicacion = $${idx++}`); values.push(data.ubicacion); }
+    if (data.descripcion !== undefined) { updates.push(`descripcion = $${idx++}`); values.push(data.descripcion || null); }
+    if (data.area !== undefined) { updates.push(`area = $${idx++}`); values.push(data.area); }
+    if (data.tipoFinca !== undefined) { updates.push(`tipo_finca = $${idx++}`); values.push(data.tipoFinca); }
+    if (data.codigoIcaInvima !== undefined) { updates.push(`codigo_ica_invima = $${idx++}`); values.push(data.codigoIcaInvima || null); }
+
+    if (updates.length === 0) return this.findFinca(fincaId, propietarioId);
+
+    values.push(fincaId);
+    let query: string;
+    if (propietarioId === null) {
+      query = `UPDATE fincas SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} RETURNING *`;
+    } else {
+      values.push(propietarioId);
+      query = `UPDATE fincas SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} AND propietario_id = $${idx + 1} RETURNING *`;
+    }
+
+    const result = await pool.query(query, values);
+    return result.rows[0] ? new Finca(result.rows[0]) : null;
   }
 
   async createParcela(propietarioId: number, data: {

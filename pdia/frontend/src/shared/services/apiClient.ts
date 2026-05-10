@@ -1,4 +1,4 @@
-import { useAuthStore, type AuthUser } from '../../store/authStore'
+import { useAuthStore, type AuthUser, type UserRole } from '../../store/authStore'
 
 const BASE_URL = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8000'
 
@@ -81,6 +81,32 @@ export interface UpdateProfilePayload {
 export interface UpdatePasswordPayload {
   currentPassword: string
   newPassword: string
+}
+
+export interface UserDto {
+  id: number
+  nombre: string
+  identificacion: string
+  email: string
+  rol: UserRole
+  productorId: number | null
+}
+
+export interface CreateUserPayload {
+  nombre: string
+  identificacion: string
+  email: string
+  password: string
+  rol?: UserRole
+  productorId?: number
+}
+
+export interface UpdateUserPayload {
+  nombre?: string
+  identificacion?: string
+  email?: string
+  rol?: UserRole
+  productorId?: number | null
 }
 
 export interface ParcelaDto {
@@ -276,6 +302,32 @@ export interface RecomendacionDto {
   cultivoId: number
 }
 
+export interface TecnicoAsignadoDto {
+  id: number
+  nombre: string
+  identificacion: string
+  email: string
+  fechaAsignacion: string
+}
+
+export interface ProductorAsignadoDto {
+  id: number
+  nombre: string
+  identificacion: string
+  email: string
+  fechaAsignacion: string
+}
+
+export interface FincaTecnicoDto {
+  id: number
+  nombre: string
+  ubicacion: string
+  area: number
+  tipoFinca: TipoFinca
+  propietarioId: number
+  propietarioNombre?: string
+}
+
 export interface ReporteActividadesDto {
   cultivoId: number
   totalActividades: number
@@ -299,23 +351,6 @@ export class ApiClientError extends Error {
 
 function withLeadingSlash(path: string): string {
   return path.startsWith('/') ? path : `/${path}`
-}
-
-function decodeJwtPayload(token: string): { userId: number; email: string; rol: string } | null {
-  try {
-    const base64Url = token.split('.')[1]
-    if (!base64Url) return null
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(''),
-    )
-    return JSON.parse(jsonPayload)
-  } catch {
-    return null
-  }
 }
 
 function createHeaders(extraHeaders?: HeadersInit): Headers {
@@ -420,24 +455,12 @@ export const apiClient = {
 
   auth: {
     register: (payload: RegisterPayload) => apiClient.post<AuthResponse>('/api/auth/register', payload),
-    login: async (payload: LoginPayload): Promise<{ token: string; user: AuthUser }> => {
-      const loginResponse = await apiClient.post<LoginResponse>('/api/auth/login', payload)
-      const jwtPayload = decodeJwtPayload(loginResponse.token)
-      if (!jwtPayload) {
-        throw new ApiClientError('Token inválido', 500)
+    login: async (payload: LoginPayload): Promise<AuthResponse> => {
+      const response = await apiClient.post<AuthResponse>('/api/auth/login', payload)
+      if (!response.token || !response.user) {
+        throw new ApiClientError('Respuesta de login inválida', 500)
       }
-      
-      return {
-        token: loginResponse.token,
-        user: {
-          id: jwtPayload.userId,
-          email: jwtPayload.email,
-          rol: jwtPayload.rol as AuthUser['rol'],
-          nombre: '', 
-          identificacion: '', 
-          productorId: null, 
-        },
-      }
+      return response
     },
     me: () => apiClient.get<AuthUser>('/api/auth/me'),
     forgotPassword: (payload: ForgotPasswordPayload) =>
@@ -480,6 +503,7 @@ export const apiClient = {
     create: (payload: CreateCultivoPayload) => apiClient.post<CultivoDto>('/api/cultivos', payload),
     update: (id: number, payload: UpdateCultivoPayload) => apiClient.put<CultivoDto>(`/api/cultivos/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/cultivos/${id}`),
+    getTipos: () => apiClient.get<{ id: number; nombre: string; descripcion: string | null }[]>('/api/cultivos/tipos'),
   },
 
   actividades: {
@@ -527,10 +551,30 @@ export const apiClient = {
   },
 
   reportes: {
-    actividades: (cultivoId: number) => apiClient.get<ReporteActividadesDto>(`/api/reportes/actividades/${cultivoId}`),
-    actividadesCsv: (cultivoId: number) => apiClient.getBlob(`/api/reportes/actividades/${cultivoId}/csv`),
+    actividades: (cultivoId: number) => apiClient.get<ReporteActividadesDto>(`/api/reportes/activities/${cultivoId}`),
+    actividadesCsv: (cultivoId: number) => apiClient.getBlob(`/api/reportes/activities/${cultivoId}/csv`),
     riegos: (cultivoId: number) => apiClient.get<ReporteActividadesDto>(`/api/reportes/riegos/${cultivoId}`),
     fertilizaciones: (cultivoId: number) =>
       apiClient.get<ReporteActividadesDto>(`/api/reportes/fertilizaciones/${cultivoId}`),
+  },
+
+  users: {
+    list: () => apiClient.get<UserDto[]>('/api/auth/users'),
+    listByRol: (rol: string) => apiClient.get<UserDto[]>(`/api/auth/users?rol=${rol}`),
+    findOne: (id: number) => apiClient.get<UserDto>(`/api/auth/users/${id}`),
+    create: (payload: CreateUserPayload) => apiClient.post<{ token: string; user: UserDto }>('/api/auth/users', payload),
+    update: (id: number, payload: UpdateUserPayload) => apiClient.put<UserDto>(`/api/auth/users/${id}`, payload),
+    delete: (id: number) => apiClient.delete<void>(`/api/auth/users/${id}`),
+    listRoles: () => apiClient.get<string[]>('/api/auth/roles'),
+  },
+
+  tecnicos: {
+    listAsignados: () => apiClient.get<TecnicoAsignadoDto[]>('/api/auth/tecnicos/asignados'),
+    asignar: (tecnicoId: number, productorId: number) =>
+      apiClient.post<{ success: boolean }>('/api/auth/tecnicos/asignar', { tecnicoId, productorId }),
+    desasignar: (tecnicoId: number, productorId: number) =>
+      apiClient.post<{ success: boolean }>('/api/auth/tecnicos/desasignar', { tecnicoId, productorId }),
+    listMisProductores: () => apiClient.get<ProductorAsignadoDto[]>('/api/auth/tecnicos/mis-productores'),
+    listFincas: () => apiClient.get<FincaTecnicoDto[]>('/api/auth/tecnicos/fincas'),
   },
 }

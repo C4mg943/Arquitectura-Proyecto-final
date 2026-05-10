@@ -39,10 +39,13 @@ export class Actividad {
   getCreadoPorId(): number { return this.data.creadoPorId; }
 
   toJson() {
+    const fecha = this.data.fecha instanceof Date
+      ? this.data.fecha.toISOString().split("T")[0]
+      : String(this.data.fecha).split("T")[0];
     return {
       id: this.data.id,
       tipo: this.data.tipo,
-      fecha: this.data.fecha.toISOString().split("T")[0],
+      fecha,
       descripcion: this.data.descripcion,
       datos: this.data.datos,
       cultivoId: this.data.cultivoId,

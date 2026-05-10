@@ -11,7 +11,7 @@ export class RecommendationService {
 
   async generateFromActividad(actividad: { cultivoId: number; tipo: string; }): Promise<void> {
     if (actividad.tipo === "PLAGA") {
-      await this.create({ tipo: TipoRecomendacion.FITORECOMENDACION, descripcion: "Se detect plaga. Se recomienda aplica control fitosanitario.", cultivoId: actividad.cultivoId });
+      await this.create({ tipo: TipoRecomendacion.FITORECOMENDACION, descripcion: "Se detectó una plaga. Se recomienda aplicar control fitosanitario.", cultivoId: actividad.cultivoId });
     }
   }
 
@@ -25,6 +25,62 @@ export class RecommendationService {
 
   async listByUser(userId: number): Promise<Recomendacion[]> {
     const result = await pool.query(`SELECT r.* FROM recomendaciones r JOIN cultivos c ON r.cultivo_id = c.id JOIN parcelas p ON c.parcela_id = p.id JOIN fincas f ON p.finca_id = f.id WHERE f.propietario_id = $1 ORDER BY r.fecha DESC`, [userId]);
+    return result.rows.map((row: any) => new Recomendacion(row));
+  }
+
+  async listByTecnico(tecnicoId: number): Promise<Recomendacion[]> {
+    const result = await pool.query(
+      `SELECT r.* FROM recomendaciones r
+       JOIN cultivos c ON r.cultivo_id = c.id
+       JOIN parcelas p ON c.parcela_id = p.id
+       JOIN fincas f ON p.finca_id = f.id
+       JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+       WHERE at.tecnico_id = $1
+       ORDER BY r.fecha DESC`,
+      [tecnicoId]
+    );
+    return result.rows.map((row: any) => new Recomendacion(row));
+  }
+
+  async listByCultivo(cultivoId: number, userId: number, rol: string): Promise<Recomendacion[]> {
+    let result;
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query(
+        `SELECT * FROM recomendaciones WHERE cultivo_id = $1 ORDER BY fecha DESC`,
+        [cultivoId]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT r.* FROM recomendaciones r
+         JOIN cultivos c ON r.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE r.cultivo_id = $1 AND at.tecnico_id = $2
+         ORDER BY r.fecha DESC`,
+        [cultivoId, userId]
+      );
+    } else if (rol === "PRODUCTOR") {
+      result = await pool.query(
+        `SELECT r.* FROM recomendaciones r
+         JOIN cultivos c ON r.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE r.cultivo_id = $1 AND f.propietario_id = $2
+         ORDER BY r.fecha DESC`,
+        [cultivoId, userId]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT r.* FROM recomendaciones r
+         JOIN cultivos c ON r.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+         WHERE r.cultivo_id = $1 AND ao.operario_id = $2
+         ORDER BY r.fecha DESC`,
+        [cultivoId, userId]
+      );
+    }
     return result.rows.map((row: any) => new Recomendacion(row));
   }
 }
