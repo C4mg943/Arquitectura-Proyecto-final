@@ -150,4 +150,19 @@ export class OperarioService {
 
     return { success: true };
   }
+
+  async deleteOperario(operarioId: number) {
+    await pool.query("DELETE FROM asignacion_operarios WHERE operario_id = $1", [operarioId]);
+
+    const result = await pool.query(
+      "DELETE FROM users WHERE id = $1 AND rol = 'OPERARIO' RETURNING id",
+      [operarioId]
+    );
+
+    if ((result.rowCount ?? 0) === 0) {
+      throw new Error("El operario no existe o no puede ser eliminado");
+    }
+
+    return { success: true };
+  }
 }

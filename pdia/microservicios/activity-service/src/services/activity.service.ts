@@ -2,6 +2,55 @@ import { pool } from "../config/db.js";
 import { Actividad, TipoActividad } from "../models/activity.model.js";
 import { publishEvent } from "../config/rabbitmq.js";
 
+/**
+ * Normaliza una fecha (ISO "YYYY-MM-DD" o ISO completa) a objeto Date UTC a medianoche.
+ * Usamos UTC para evitar desfases por zona horaria al comparar solo día.
+ */
+function toDateOnlyUTC(value: string | Date): Date {
+  if (value instanceof Date) {
+    return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+  }
+  const str = value.includes("T") ? value.split("T")[0] : value;
+  const [y, m, d] = str.split("-").map((p) => parseInt(p, 10));
+  return new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+}
+
+function todayUTC(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+/**
+ * Valida la fecha de una actividad:
+ * - No puede ser futura respecto al día actual (UTC).
+ * - No puede ser anterior a la fecha de siembra del cultivo asociado.
+ * Lanza Error con un mensaje legible si algo no cuadra.
+ */
+async function validateActivityDate(fecha: string, cultivoId: number): Promise<void> {
+  const fechaActividad = toDateOnlyUTC(fecha);
+  const today = todayUTC();
+
+  if (fechaActividad.getTime() > today.getTime()) {
+    throw new Error("La fecha de la actividad no puede ser futura.");
+  }
+
+  const result = await pool.query(
+    "SELECT fecha_siembra FROM cultivos WHERE id = $1",
+    [cultivoId],
+  );
+  if (result.rows.length === 0) {
+    throw new Error("El cultivo no existe.");
+  }
+
+  const fechaSiembra = toDateOnlyUTC(result.rows[0].fecha_siembra as Date | string);
+  if (fechaActividad.getTime() < fechaSiembra.getTime()) {
+    const siembraStr = fechaSiembra.toISOString().split("T")[0];
+    throw new Error(
+      `La fecha de la actividad no puede ser anterior a la fecha de siembra del cultivo (${siembraStr}).`,
+    );
+  }
+}
+
 export class ActivityService {
   async create(data: {
     tipo: TipoActividad;
@@ -11,6 +60,8 @@ export class ActivityService {
     cultivoId: number;
     usuarioId: number;
   }): Promise<Actividad> {
+    await validateActivityDate(data.fecha, data.cultivoId);
+
     const result = await pool.query(
       `INSERT INTO actividades (tipo, fecha, descripcion, datos, cultivo_id, creado_por_id)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -152,6 +203,11 @@ export class ActivityService {
     // Operario solo puede editar actividades que él creó
     if (rol === "OPERARIO" && existing.getCreadoPorId() !== usuarioId) {
       throw new Error("No tienes permiso para editar esta actividad");
+    }
+
+    // Si se está cambiando la fecha, validar que no sea futura ni anterior a la siembra
+    if (data.fecha !== undefined) {
+      await validateActivityDate(data.fecha, existing.getCultivoId());
     }
 
     const updates: string[] = [];

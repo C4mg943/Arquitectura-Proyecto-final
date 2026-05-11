@@ -20,7 +20,7 @@ router.get("/tipos", async (req: AuthRequest, res: Response) => {
 
 router.post(
   "/",
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "OPERARIO"),
   [
     body("tipoCultivo").notEmpty(),
     body("fechaSiembra").isISO8601(),
@@ -32,6 +32,7 @@ router.post(
       const cultivo = await cropService.create({
         ...req.body,
         usuarioId: req.user!.userId,
+        rol: req.user!.rol,
       });
       res.status(201).json(cultivo.toJson());
     } catch (error: any) {
@@ -84,11 +85,12 @@ router.get("/:id", async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.put("/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.put("/:id", requireRoles("PRODUCTOR", "OPERARIO"), async (req: AuthRequest, res: Response) => {
   try {
     const cultivo = await cropService.update(
       parseInt(req.params.id),
       req.user!.userId,
+      req.user!.rol,
       req.body
     );
     if (!cultivo) return res.status(404).json({ error: "Cultivo no encontrado" });
@@ -98,9 +100,13 @@ router.put("/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Resp
   }
 });
 
-router.delete("/:id", requireRoles("PRODUCTOR"), async (req: AuthRequest, res: Response) => {
+router.delete("/:id", requireRoles("PRODUCTOR", "OPERARIO"), async (req: AuthRequest, res: Response) => {
   try {
-    const deleted = await cropService.delete(parseInt(req.params.id), req.user!.userId);
+    const deleted = await cropService.delete(
+      parseInt(req.params.id),
+      req.user!.userId,
+      req.user!.rol
+    );
     if (!deleted) return res.status(404).json({ error: "Cultivo no encontrado" });
     res.status(204).send();
   } catch (error: any) {

@@ -109,6 +109,15 @@ export interface UpdateUserPayload {
   productorId?: number | null
 }
 
+export interface MunicipioDto {
+  id: number
+  nombre: string
+  departamento: string
+  latitud: number
+  longitud: number
+  radioKm: number
+}
+
 export interface ParcelaDto {
   id: number
   nombre: string
@@ -476,6 +485,7 @@ export const apiClient = {
     create: (payload: CreateParcelaPayload) => apiClient.post<ParcelaDto>('/api/parcelas/parcela', payload),
     update: (id: number, payload: UpdateParcelaPayload) => apiClient.put<ParcelaDto>(`/api/parcelas/parcela/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/parcelas/parcela/${id}`),
+    listMunicipios: () => apiClient.get<MunicipioDto[]>('/api/parcelas/municipios'),
   },
 
   fincas: {
@@ -494,6 +504,7 @@ export const apiClient = {
       apiClient.post<{ success: boolean }>(`/api/operarios/${operarioId}/asignar`, { parcelaId }),
     unassign: (operarioId: number, parcelaId: number) =>
       apiClient.post<{ success: boolean }>(`/api/operarios/${operarioId}/desasignar`, { parcelaId }),
+    delete: (operarioId: number) => apiClient.delete<void>(`/api/operarios/${operarioId}`),
   },
 
   cultivos: {

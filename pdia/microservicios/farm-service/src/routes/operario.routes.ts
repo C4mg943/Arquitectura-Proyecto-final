@@ -109,4 +109,17 @@ router.delete(
   }
 );
 
+router.delete(
+  "/:operarioId",
+  requireRoles("ADMINISTRADOR"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      await operarioService.deleteOperario(parseInt(req.params.operarioId));
+      res.json({ success: true, message: "Operario eliminado correctamente" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
 export { router as operarioRouter };

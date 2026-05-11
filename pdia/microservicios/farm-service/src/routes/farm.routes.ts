@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import { FarmService } from "../services/farm.service.js";
+import { pool } from "../config/db.js";
 import { authMiddleware, requireRoles, AuthRequest } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -8,11 +9,33 @@ const farmService = new FarmService();
 
 router.use(authMiddleware);
 
-router.get("/finca", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
+// ============================================
+// MUNICIPIOS (catálogo para formularios)
+// ============================================
+router.get("/municipios", async (_req: AuthRequest, res: Response) => {
   try {
-    const fincas = req.user!.rol === "ADMINISTRADOR"
-      ? await farmService.listAllFincas()
-      : await farmService.listFincas(req.user!.userId);
+    const result = await pool.query(
+      `SELECT id, nombre, departamento, latitud::float AS latitud, longitud::float AS longitud, radio_km::float AS "radioKm"
+       FROM municipios ORDER BY nombre`
+    );
+    res.json(result.rows);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/finca", requireRoles("PRODUCTOR", "OPERARIO", "TECNICO", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
+  try {
+    let fincas;
+    if (req.user!.rol === "ADMINISTRADOR") {
+      fincas = await farmService.listAllFincas();
+    } else if (req.user!.rol === "OPERARIO") {
+      fincas = await farmService.listFincasByOperario(req.user!.userId);
+    } else if (req.user!.rol === "TECNICO") {
+      fincas = await farmService.listFincasByTecnico(req.user!.userId);
+    } else {
+      fincas = await farmService.listFincas(req.user!.userId);
+    }
     res.json(fincas.map((f) => f.toJson()));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -56,9 +79,28 @@ router.delete("/finca/:id", requireRoles("PRODUCTOR", "ADMINISTRADOR"), async (r
 router.get("/finca/:id", requireRoles("PRODUCTOR", "OPERARIO", "TECNICO", "ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
   try {
     const fincaId = parseInt(req.params.id);
-    const propietarioId = req.user!.rol === "ADMINISTRADOR" ? null : req.user!.userId;
-    const finca = await farmService.findFinca(fincaId, propietarioId);
+    // Admin ve cualquier finca; operario/técnico ven las de sus parcelas/productores asignados.
+    // Para simplificar: buscamos sin filtro de propietario y luego verificamos acceso.
+    const finca = await farmService.findFinca(fincaId, null);
     if (!finca) return res.status(404).json({ error: "Finca no encontrada" });
+
+    // Verificar que el operario tenga al menos una parcela en esa finca
+    if (req.user!.rol === "OPERARIO") {
+      const fincasOperario = await farmService.listFincasByOperario(req.user!.userId);
+      if (!fincasOperario.some((f) => f.getId() === fincaId)) {
+        return res.status(403).json({ error: "No tienes acceso a esta finca" });
+      }
+    } else if (req.user!.rol === "TECNICO") {
+      const fincasTecnico = await farmService.listFincasByTecnico(req.user!.userId);
+      if (!fincasTecnico.some((f) => f.getId() === fincaId)) {
+        return res.status(403).json({ error: "No tienes acceso a esta finca" });
+      }
+    } else if (req.user!.rol === "PRODUCTOR") {
+      if (finca.getPropietarioId() !== req.user!.userId) {
+        return res.status(403).json({ error: "No tienes acceso a esta finca" });
+      }
+    }
+
     res.json(finca.toJson());
   } catch (error: any) {
     res.status(500).json({ error: error.message });

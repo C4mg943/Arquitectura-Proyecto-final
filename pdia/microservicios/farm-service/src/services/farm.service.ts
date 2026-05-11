@@ -2,6 +2,85 @@ import { pool } from "../config/db.js";
 import { Finca, Parcela } from "../models/farm.model.js";
 import { publishEvent } from "../config/rabbitmq.js";
 
+/**
+ * Distancia haversine entre dos puntos en kilómetros.
+ */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radio medio de la Tierra en km
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+interface MunicipioRow {
+  nombre: string;
+  departamento: string;
+  latitud: number;
+  longitud: number;
+  radio_km: number;
+}
+
+/**
+ * Busca un municipio por nombre (case-insensitive). Si hay varios con el mismo
+ * nombre (caso ambiguo), se intenta desambiguar por cercanía a las coords dadas.
+ * Devuelve null si no existe en el catálogo.
+ */
+async function findMunicipio(
+  nombre: string,
+  latitud: number,
+  longitud: number,
+): Promise<MunicipioRow | null> {
+  const result = await pool.query(
+    `SELECT nombre, departamento, latitud::float AS latitud, longitud::float AS longitud, radio_km::float AS radio_km
+     FROM municipios WHERE LOWER(nombre) = LOWER($1)`,
+    [nombre.trim()],
+  );
+  if (result.rows.length === 0) return null;
+  if (result.rows.length === 1) return result.rows[0] as MunicipioRow;
+
+  // Varios municipios con el mismo nombre — elegir el más cercano al punto dado
+  return (result.rows as MunicipioRow[]).reduce((closest, current) => {
+    const dCurrent = haversineKm(latitud, longitud, current.latitud, current.longitud);
+    const dClosest = haversineKm(latitud, longitud, closest.latitud, closest.longitud);
+    return dCurrent < dClosest ? current : closest;
+  });
+}
+
+/**
+ * Valida que las coordenadas dadas estén dentro del radio del municipio declarado.
+ * - Si el municipio no existe en el catálogo, se acepta (no bloqueamos nombres libres).
+ * - Si existe y las coords están fuera de su radio, lanza un Error.
+ */
+async function validateCoordsForMunicipio(
+  municipio: string,
+  latitud: number,
+  longitud: number,
+): Promise<void> {
+  // Validar rangos básicos
+  if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180) {
+    throw new Error("Latitud o longitud fuera de rango válido");
+  }
+
+  const match = await findMunicipio(municipio, latitud, longitud);
+  if (!match) {
+    // No bloqueamos municipios no catalogados, solo los validamos en rango.
+    return;
+  }
+
+  const distance = haversineKm(latitud, longitud, match.latitud, match.longitud);
+  if (distance > match.radio_km) {
+    throw new Error(
+      `Las coordenadas (${latitud.toFixed(4)}, ${longitud.toFixed(4)}) no coinciden con ${match.nombre}, ${match.departamento}. ` +
+        `Distancia: ${distance.toFixed(1)} km (máximo permitido: ${match.radio_km} km).`,
+    );
+  }
+}
+
 export class FarmService {
   async createFinca(propietarioId: number | null, data: {
     nombre: string;
@@ -30,6 +109,29 @@ export class FarmService {
   async listAllFincas(): Promise<Finca[]> {
     const result = await pool.query(
       "SELECT * FROM fincas ORDER BY created_at DESC"
+    );
+    return result.rows.map((row) => new Finca(row));
+  }
+
+  async listFincasByOperario(operarioId: number): Promise<Finca[]> {
+    const result = await pool.query(
+      `SELECT DISTINCT f.* FROM fincas f
+       JOIN parcelas p ON p.finca_id = f.id
+       JOIN asignacion_operarios ao ON ao.parcela_id = p.id
+       WHERE ao.operario_id = $1
+       ORDER BY f.created_at DESC`,
+      [operarioId]
+    );
+    return result.rows.map((row) => new Finca(row));
+  }
+
+  async listFincasByTecnico(tecnicoId: number): Promise<Finca[]> {
+    const result = await pool.query(
+      `SELECT DISTINCT f.* FROM fincas f
+       JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+       WHERE at.tecnico_id = $1
+       ORDER BY f.created_at DESC`,
+      [tecnicoId]
     );
     return result.rows.map((row) => new Finca(row));
   }
@@ -122,6 +224,9 @@ export class FarmService {
       throw new Error("La Finca no existe o no pertenece al productor");
     }
 
+    // Validar que las coordenadas concuerden con el municipio declarado
+    await validateCoordsForMunicipio(data.municipio, data.latitud, data.longitud);
+
     const result = await pool.query(
       `INSERT INTO parcelas (nombre, municipio, hectareas, latitud, longitud, finca_id)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -161,6 +266,24 @@ export class FarmService {
     latitud: number;
     longitud: number;
   }>): Promise<Parcela | null> {
+    // Si se están cambiando coords o municipio, validar consistencia. Leemos el
+    // estado actual para rellenar los campos no enviados.
+    if (data.municipio !== undefined || data.latitud !== undefined || data.longitud !== undefined) {
+      const current = await pool.query(
+        `SELECT p.municipio, p.latitud::float AS latitud, p.longitud::float AS longitud
+         FROM parcelas p
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE p.id = $1 AND f.propietario_id = $2`,
+        [parcelaId, propietarioId]
+      );
+      if (current.rows.length === 0) return null;
+
+      const municipio = data.municipio ?? current.rows[0].municipio;
+      const latitud = data.latitud ?? Number(current.rows[0].latitud);
+      const longitud = data.longitud ?? Number(current.rows[0].longitud);
+      await validateCoordsForMunicipio(municipio, latitud, longitud);
+    }
+
     const updates: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -177,11 +300,11 @@ export class FarmService {
       updates.push(`hectareas = $${idx++}`);
       values.push(data.hectareas);
     }
-    if (data.latitud) {
+    if (data.latitud !== undefined) {
       updates.push(`latitud = $${idx++}`);
       values.push(data.latitud);
     }
-    if (data.longitud) {
+    if (data.longitud !== undefined) {
       updates.push(`longitud = $${idx++}`);
       values.push(data.longitud);
     }

@@ -85,6 +85,10 @@ export default function ActivitiesPage() {
     return map
   }, [cultivos])
 
+  const todayIso = new Date().toISOString().split('T')[0]
+  const selectedCultivo = cultivoId ? cultivoById.get(cultivoId) : null
+  const minFechaActividad = selectedCultivo?.fechaSiembra ?? undefined
+
   const filteredParcelas = useMemo(() => {
     if (fincaFilter === 'TODAS') return parcelas
     return parcelas.filter((p) => p.fincaId === Number(fincaFilter))
@@ -129,7 +133,7 @@ export default function ActivitiesPage() {
     try {
       const [activitiesResponse, fincasResponse, parcelasResponse, cultivosResponse] = await Promise.all([
         apiClient.actividades.list(),
-        apiClient.fincas.list(),
+        apiClient.fincas.list().catch(() => [] as import('../../../shared/services/apiClient').FincaDto[]),
         apiClient.parcelas.list(),
         apiClient.cultivos.list(),
       ])
@@ -217,6 +221,18 @@ export default function ActivitiesPage() {
     }
     if (!cultivoId) {
       setError('Selecciona un cultivo.')
+      return
+    }
+
+    // Validaciones de fecha (duplica la del backend para feedback inmediato)
+    if (fecha > todayIso) {
+      setError('La fecha de la actividad no puede ser futura.')
+      return
+    }
+    if (selectedCultivo && fecha < selectedCultivo.fechaSiembra) {
+      setError(
+        `La fecha no puede ser anterior a la siembra del cultivo (${selectedCultivo.fechaSiembra}).`,
+      )
       return
     }
 
@@ -502,10 +518,17 @@ export default function ActivitiesPage() {
             <input
               id="create-activity-date"
               className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+              max={todayIso}
+              min={minFechaActividad}
               onChange={(event) => setFecha(event.target.value)}
               type="date"
               value={fecha}
             />
+            {selectedCultivo ? (
+              <span className="block text-[11px] text-on-surface-variant">
+                Desde siembra: {selectedCultivo.fechaSiembra} · Hasta hoy: {todayIso}
+              </span>
+            ) : null}
           </label>
 
           {tipo === 'RIEGO' && (

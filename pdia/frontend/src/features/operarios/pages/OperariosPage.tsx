@@ -192,6 +192,28 @@ export default function OperariosPage({ adminMode = false }: { adminMode?: boole
     }
   }
 
+  const handleDelete = async (operarioId: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este operario?')) {
+      return
+    }
+
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      await apiClient.operarios.delete(operarioId)
+      setOperarios((current) => current.filter((item) => item.operario.id !== operarioId))
+    } catch (unknownError) {
+      if (unknownError instanceof ApiClientError) {
+        setError(unknownError.message)
+      } else {
+        setError('No fue posible eliminar el operario.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section className="space-y-6">
       <header>
@@ -327,7 +349,22 @@ export default function OperariosPage({ adminMode = false }: { adminMode?: boole
                 <h3 className="text-title-lg text-on-surface">{item.operario.nombre}</h3>
                 <p className="text-sm text-on-surface-variant">{item.operario.email}</p>
               </div>
-              <Badge variant="neutral">{item.parcelas.length} parcelas</Badge>
+              <div className="flex items-center gap-2">
+                {adminMode && (
+                  <button
+                    aria-label={`Eliminar ${item.operario.nombre}`}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-error-container text-on-error-container hover:brightness-95"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      void handleDelete(item.operario.id)
+                    }}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-base">delete</span>
+                  </button>
+                )}
+                <Badge variant="neutral">{item.parcelas.length} parcelas</Badge>
+              </div>
             </div>
 
             <div className="mt-4 space-y-2">

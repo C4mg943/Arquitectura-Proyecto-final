@@ -234,3 +234,60 @@ INSERT INTO umbrales (tipo_cultivo, temperatura_min, temperatura_max, lluvia_max
     ('Yuca', 20, 30, 70, 50),
     ('Ñame', 22, 32, 75, 45)
 ON CONFLICT (tipo_cultivo) DO NOTHING;
+
+-- ============================================
+-- CATÁLOGO DE MUNICIPIOS (centroides)
+-- Sirve para validar que lat/lon de una parcela concuerden con el municipio declarado.
+-- Datos: centroides aproximados de cabeceras municipales colombianas.
+-- Fuente: dominio público (coordenadas públicas de cabeceras municipales).
+-- ============================================
+CREATE TABLE IF NOT EXISTS municipios (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(120) NOT NULL,
+    departamento VARCHAR(120) NOT NULL,
+    latitud NUMERIC(10,6) NOT NULL,
+    longitud NUMERIC(10,6) NOT NULL,
+    radio_km NUMERIC(6,2) NOT NULL DEFAULT 50,
+    UNIQUE (nombre, departamento)
+);
+
+CREATE INDEX IF NOT EXISTS idx_municipios_nombre_lower ON municipios (LOWER(nombre));
+
+INSERT INTO municipios (nombre, departamento, latitud, longitud, radio_km) VALUES
+    ('Bogotá',       'Cundinamarca',    4.7110,  -74.0721, 30),
+    ('Medellín',     'Antioquia',       6.2442,  -75.5812, 25),
+    ('Cali',         'Valle del Cauca', 3.4516,  -76.5320, 25),
+    ('Barranquilla', 'Atlántico',      10.9685,  -74.7813, 20),
+    ('Cartagena',    'Bolívar',        10.3910,  -75.4794, 25),
+    ('Santa Marta',  'Magdalena',      11.2404,  -74.1990, 25),
+    ('Cúcuta',       'Norte de Santander', 7.8939, -72.5078, 20),
+    ('Bucaramanga',  'Santander',       7.1193,  -73.1227, 25),
+    ('Pereira',      'Risaralda',       4.8133,  -75.6961, 20),
+    ('Manizales',    'Caldas',          5.0689,  -75.5174, 20),
+    ('Ibagué',       'Tolima',          4.4389,  -75.2322, 25),
+    ('Neiva',        'Huila',           2.9273,  -75.2819, 25),
+    ('Pasto',        'Nariño',          1.2136,  -77.2811, 20),
+    ('Villavicencio','Meta',            4.1420,  -73.6266, 25),
+    ('Montería',     'Córdoba',         8.7479,  -75.8814, 25),
+    ('Sincelejo',    'Sucre',           9.3047,  -75.3978, 20),
+    ('Valledupar',   'Cesar',          10.4631,  -73.2532, 25),
+    ('Riohacha',     'La Guajira',     11.5444,  -72.9072, 25),
+    ('Armenia',      'Quindío',         4.5339,  -75.6811, 20),
+    ('Popayán',      'Cauca',           2.4448,  -76.6147, 25),
+    ('Tunja',        'Boyacá',          5.5353,  -73.3678, 20),
+    ('Florencia',    'Caquetá',         1.6144,  -75.6062, 25),
+    ('Mocoa',        'Putumayo',        1.1522,  -76.6525, 25),
+    ('Yopal',        'Casanare',        5.3378,  -72.3959, 25),
+    ('Arauca',       'Arauca',          7.0847,  -70.7591, 25),
+    ('Quibdó',       'Chocó',           5.6919,  -76.6583, 25),
+    ('Leticia',      'Amazonas',       -4.2150,  -69.9406, 30),
+    ('Garzón',       'Huila',           2.1958,  -75.6277, 20),
+    ('Zipaquirá',    'Cundinamarca',    5.0220,  -74.0050, 15),
+    ('Chía',         'Cundinamarca',    4.8627,  -74.0600, 15),
+    ('Soacha',       'Cundinamarca',    4.5876,  -74.2165, 15),
+    ('Fusagasugá',   'Cundinamarca',    4.3376,  -74.3651, 20),
+    ('Girardot',     'Cundinamarca',    4.3049,  -74.8010, 20),
+    ('Ciénaga',      'Magdalena',      10.9878,  -74.2475, 20),
+    ('Aracataca',    'Magdalena',      10.5921,  -74.1887, 20),
+    ('Fundación',    'Magdalena',      10.5161,  -74.1778, 20)
+ON CONFLICT (nombre, departamento) DO NOTHING;

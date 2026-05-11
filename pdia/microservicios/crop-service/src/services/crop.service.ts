@@ -10,16 +10,37 @@ export class CropService {
     observaciones?: string;
     parcelaId: number;
     usuarioId: number;
+    rol: string;
   }): Promise<Cultivo> {
-    // Validar que la parcela pertenezca a una finca del productor antes de crear el cultivo
-    const ownership = await pool.query(
-      `SELECT 1 FROM parcelas p
-       JOIN fincas f ON p.finca_id = f.id
-       WHERE p.id = $1 AND f.propietario_id = $2`,
-      [data.parcelaId, data.usuarioId]
-    );
+    // La fecha de siembra no puede ser futura.
+    const siembra = new Date(data.fechaSiembra.includes("T") ? data.fechaSiembra : `${data.fechaSiembra}T00:00:00Z`);
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const siembraUtc = new Date(Date.UTC(siembra.getUTCFullYear(), siembra.getUTCMonth(), siembra.getUTCDate()));
+    if (siembraUtc.getTime() > todayUtc.getTime()) {
+      throw new Error("La fecha de siembra no puede ser futura.");
+    }
+
+    // Validar ownership: productor sobre sus fincas, operario sobre sus parcelas asignadas.
+    const ownership = data.rol === "OPERARIO"
+      ? await pool.query(
+          `SELECT 1 FROM parcelas p
+           JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+           WHERE p.id = $1 AND ao.operario_id = $2`,
+          [data.parcelaId, data.usuarioId]
+        )
+      : await pool.query(
+          `SELECT 1 FROM parcelas p
+           JOIN fincas f ON p.finca_id = f.id
+           WHERE p.id = $1 AND f.propietario_id = $2`,
+          [data.parcelaId, data.usuarioId]
+        );
     if (ownership.rowCount === 0) {
-      throw new Error("La parcela no existe o no pertenece al productor");
+      throw new Error(
+        data.rol === "OPERARIO"
+          ? "La parcela no existe o no te fue asignada."
+          : "La parcela no existe o no pertenece al productor."
+      );
     }
 
     const result = await pool.query(
@@ -90,12 +111,27 @@ export class CropService {
     return result.rows.map((row) => new Cultivo(row));
   }
 
-  async update(id: number, propietarioId: number, data: Partial<{
+  async update(id: number, userId: number, rol: string, data: Partial<{
     tipoCultivo: string;
     fechaSiembra: string;
     estado: EstadoCultivo;
     observaciones: string;
   }>): Promise<Cultivo | null> {
+    // Chequeo de ownership: el operario solo puede editar cultivos de parcelas que le fueron asignadas.
+    const existing = await this.findById(id, userId, rol);
+    if (!existing) return null;
+
+    // Validar fecha de siembra si la están cambiando
+    if (data.fechaSiembra) {
+      const siembra = new Date(data.fechaSiembra.includes("T") ? data.fechaSiembra : `${data.fechaSiembra}T00:00:00Z`);
+      const today = new Date();
+      const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+      const siembraUtc = new Date(Date.UTC(siembra.getUTCFullYear(), siembra.getUTCMonth(), siembra.getUTCDate()));
+      if (siembraUtc.getTime() > todayUtc.getTime()) {
+        throw new Error("La fecha de siembra no puede ser futura.");
+      }
+    }
+
     const updates: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -105,26 +141,24 @@ export class CropService {
     if (data.estado) { updates.push(`estado = $${idx++}`); values.push(data.estado); }
     if (data.observaciones !== undefined) { updates.push(`observaciones = $${idx++}`); values.push(data.observaciones); }
 
-    if (updates.length === 0) return null;
+    if (updates.length === 0) return existing;
 
-    values.push(id, propietarioId);
+    values.push(id);
     const result = await pool.query(
-      `UPDATE cultivos c SET ${updates.join(", ")}, updated_at = NOW()
-       FROM parcelas p, fincas f
-       WHERE c.id = $${idx} AND c.parcela_id = p.id AND p.finca_id = f.id AND f.propietario_id = $${idx + 1}
-       RETURNING c.*`,
+      `UPDATE cultivos SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} RETURNING *`,
       values
     );
     return result.rows[0] ? new Cultivo(result.rows[0]) : null;
   }
 
-  async delete(id: number, propietarioId: number): Promise<boolean> {
+  async delete(id: number, userId: number, rol: string): Promise<boolean> {
+    // Delegamos el chequeo de ownership a findById, que ya cubre los 4 roles.
+    const existing = await this.findById(id, userId, rol);
+    if (!existing) return false;
+
     const result = await pool.query(
-      `DELETE FROM cultivos c
-       USING parcelas p, fincas f
-       WHERE c.id = $1 AND c.parcela_id = p.id AND p.finca_id = f.id AND f.propietario_id = $2
-       RETURNING c.id`,
-      [id, propietarioId]
+      `DELETE FROM cultivos WHERE id = $1 RETURNING id`,
+      [id]
     );
     return (result.rowCount ?? 0) > 0;
   }

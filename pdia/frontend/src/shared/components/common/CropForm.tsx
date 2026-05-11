@@ -56,6 +56,8 @@ export default function CropForm({ mode, parcelas, initialValue, isSubmitting, o
   const [error, setError] = useState<string | null>(null)
   const [tiposCultivo, setTiposCultivo] = useState<{ id: number; nombre: string; descripcion: string | null }[]>([])
 
+  const todayIso = new Date().toISOString().split('T')[0]
+
   useEffect(() => {
     apiClient.cultivos.getTipos().then(setTiposCultivo).catch(console.error)
   }, [])
@@ -77,6 +79,12 @@ export default function CropForm({ mode, parcelas, initialValue, isSubmitting, o
     const parsed = cultivoSchema.safeParse(payload)
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Datos inválidos de cultivo')
+      return
+    }
+
+    // Validación adicional: fecha de siembra no puede ser futura
+    if (parsed.data.fechaSiembra > todayIso) {
+      setError('La fecha de siembra no puede ser futura.')
       return
     }
 
@@ -130,6 +138,7 @@ export default function CropForm({ mode, parcelas, initialValue, isSubmitting, o
             <Input
               id="crop-fecha"
               label="Fecha de siembra"
+              max={todayIso}
               onChange={(event) => setForm((current) => ({ ...current, fechaSiembra: event.target.value }))}
               type="date"
               value={form.fechaSiembra}

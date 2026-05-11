@@ -37,7 +37,7 @@ function mapEstadoToBadge(estado: CultivoDto['estado']): 'safe' | 'warning' | 'd
 
 export default function CropsPage() {
   const user = useAuthStore((state) => state.user)
-  const canManageCrops = user?.rol === 'PRODUCTOR'
+  const canManageCrops = user?.rol === 'PRODUCTOR' || user?.rol === 'OPERARIO'
   const [crops, setCrops] = useState<CultivoDto[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDto[]>([])
   const [weatherData, setWeatherData] = useState<Record<number, number>>({})
@@ -130,7 +130,7 @@ export default function CropsPage() {
 
   const handleSave = async (payload: CreateCultivoPayload) => {
     if (!canManageCrops) {
-      setError('Solo los productores pueden crear o editar cultivos.')
+      setError('No tienes permiso para crear o editar cultivos.')
       return
     }
 
@@ -167,7 +167,7 @@ export default function CropsPage() {
 
   const handleDelete = async (crop: CultivoDto) => {
     if (!canManageCrops) {
-      setError('Solo los productores pueden eliminar cultivos.')
+      setError('No tienes permiso para eliminar cultivos.')
       return
     }
 

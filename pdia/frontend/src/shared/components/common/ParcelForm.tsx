@@ -1,6 +1,7 @@
-import { type FormEvent, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 
-import type { CreateParcelaPayload, FincaDto, ParcelaDto } from '../../services/apiClient'
+import type { CreateParcelaPayload, FincaDto, MunicipioDto, ParcelaDto } from '../../services/apiClient'
+import { apiClient } from '../../services/apiClient'
 import { parcelaSchema } from '../../utils/validators'
 import Button from './Button'
 import Input from './Input'
@@ -34,6 +35,18 @@ const initialState: ParcelFormState = {
   fincaId: '',
 }
 
+/** Distancia haversine en km. */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, onSubmit, onCancel }: ParcelFormProps) {
   const seedForm = useMemo<ParcelFormState>(() => {
     if (mode === 'edit' && initialValue) {
@@ -59,6 +72,61 @@ export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, o
 
   const [form, setForm] = useState<ParcelFormState>(seedForm)
   const [error, setError] = useState<string | null>(null)
+  const [municipios, setMunicipios] = useState<MunicipioDto[]>([])
+  const [isLoadingMunicipios, setIsLoadingMunicipios] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setIsLoadingMunicipios(true)
+    apiClient.parcelas
+      .listMunicipios()
+      .then((data) => {
+        if (!cancelled) setMunicipios(data)
+      })
+      .catch(() => {
+        // Si falla, el form sigue funcionando como texto libre
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingMunicipios(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectedMunicipio = useMemo(() => {
+    if (!form.municipio) return null
+    return municipios.find((m) => m.nombre.toLowerCase() === form.municipio.toLowerCase()) ?? null
+  }, [form.municipio, municipios])
+
+  // Advertencia si las coords se salen del radio del municipio declarado
+  const distanceWarning = useMemo(() => {
+    if (!selectedMunicipio) return null
+    const lat = Number(form.latitud)
+    const lon = Number(form.longitud)
+    if (Number.isNaN(lat) || Number.isNaN(lon) || lat === 0 || lon === 0) return null
+    const distance = haversineKm(lat, lon, selectedMunicipio.latitud, selectedMunicipio.longitud)
+    if (distance > selectedMunicipio.radioKm) {
+      return `Las coordenadas están a ${distance.toFixed(1)} km del centro de ${selectedMunicipio.nombre} (máx. ${selectedMunicipio.radioKm} km).`
+    }
+    return null
+  }, [form.latitud, form.longitud, selectedMunicipio])
+
+  const handleMunicipioChange = (nombre: string) => {
+    setForm((current) => {
+      const match = municipios.find((m) => m.nombre === nombre)
+      // Si no hay coords aún y elige un municipio catalogado, auto-rellenar con el centroide.
+      const shouldPrefill =
+        match &&
+        (!current.latitud || !current.longitud || current.latitud === '0' || current.longitud === '0')
+      return {
+        ...current,
+        municipio: nombre,
+        latitud: shouldPrefill ? String(match.latitud) : current.latitud,
+        longitud: shouldPrefill ? String(match.longitud) : current.longitud,
+      }
+    })
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -79,11 +147,29 @@ export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, o
       return
     }
 
+    // Validación client-side: si el municipio está en el catálogo, las coords deben
+    // estar dentro del radio. Duplica la validación del backend para feedback inmediato.
+    if (selectedMunicipio) {
+      const distance = haversineKm(
+        payload.latitud,
+        payload.longitud,
+        selectedMunicipio.latitud,
+        selectedMunicipio.longitud,
+      )
+      if (distance > selectedMunicipio.radioKm) {
+        setError(
+          `Las coordenadas no concuerdan con ${selectedMunicipio.nombre}. Están a ${distance.toFixed(1)} km del centro (máx. ${selectedMunicipio.radioKm} km).`,
+        )
+        return
+      }
+    }
+
     await onSubmit(parsed.data)
   }
 
   const title = mode === 'create' ? 'Nueva parcela' : 'Editar parcela'
   const submitLabel = mode === 'create' ? 'Crear parcela' : 'Guardar cambios'
+  const useMunicipioCatalog = municipios.length > 0
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/45 p-4">
@@ -101,14 +187,34 @@ export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, o
               value={form.nombre}
             />
 
-            <Input
-              id="parcel-municipio"
-              label="Municipio"
-              onChange={(event) => setForm((current) => ({ ...current, municipio: event.target.value }))}
-              placeholder="Santa Marta"
-              type="text"
-              value={form.municipio}
-            />
+            {useMunicipioCatalog ? (
+              <label className="space-y-2" htmlFor="parcel-municipio">
+                <span className="text-label-md block text-on-surface-variant">Municipio</span>
+                <select
+                  id="parcel-municipio"
+                  className="w-full rounded-2xl border border-outline-variant/45 bg-surface-container-lowest px-4 py-3.5 text-sm text-on-surface outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+                  onChange={(event) => handleMunicipioChange(event.target.value)}
+                  value={form.municipio}
+                  disabled={isLoadingMunicipios}
+                >
+                  <option value="">Selecciona un municipio</option>
+                  {municipios.map((m) => (
+                    <option key={m.id} value={m.nombre}>
+                      {m.nombre} · {m.departamento}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <Input
+                id="parcel-municipio"
+                label="Municipio"
+                onChange={(event) => setForm((current) => ({ ...current, municipio: event.target.value }))}
+                placeholder="Santa Marta"
+                type="text"
+                value={form.municipio}
+              />
+            )}
 
             <Input
               id="parcel-hectareas"
@@ -158,6 +264,18 @@ export default function ParcelForm({ mode, fincas, initialValue, isSubmitting, o
               </select>
             </label>
           </div>
+
+          {selectedMunicipio && !distanceWarning ? (
+            <p className="rounded-xl bg-tertiary-container px-3 py-2 text-xs text-on-tertiary-container">
+              Centro sugerido de {selectedMunicipio.nombre}: {selectedMunicipio.latitud.toFixed(4)}, {selectedMunicipio.longitud.toFixed(4)} (radio permitido {selectedMunicipio.radioKm} km).
+            </p>
+          ) : null}
+
+          {distanceWarning ? (
+            <p className="rounded-xl bg-secondary-container px-3 py-2 text-sm font-semibold text-on-secondary-container">
+              ⚠ {distanceWarning}
+            </p>
+          ) : null}
 
           {error ? (
             <p className="rounded-xl bg-error-container px-3 py-2 text-sm font-semibold text-on-error-container">{error}</p>
