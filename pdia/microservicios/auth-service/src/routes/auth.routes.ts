@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import { body, validationResult } from "express-validator";
 import { AuthService, RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from "../services/auth.service.js";
 import { authMiddleware, AuthRequest, requireRoles } from "../middleware/auth.middleware.js";
+import { auditLog } from "../config/audit.js";
 
 const router = Router();
 const authService = new AuthService();
@@ -22,6 +23,7 @@ router.post(
       }
 
       const result = await authService.register(req.body as RegisterDto);
+      await auditLog({ userId: result.user.id, action: "REGISTER", entity: "users", entityId: result.user.id, details: { email: result.user.email, rol: result.user.rol }, ipAddress: req.ip });
       res.status(201).json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -43,6 +45,7 @@ router.post(
       }
 
       const result = await authService.login(req.body as LoginDto);
+      await auditLog({ userId: result.user.id, action: "LOGIN", entity: "users", entityId: result.user.id, details: { email: result.user.email }, ipAddress: req.ip });
       res.json(result);
     } catch (error: any) {
       res.status(401).json({ error: error.message });
@@ -196,6 +199,7 @@ router.post(
       }
 
       const result = await authService.createUser(req.body as RegisterDto);
+      await auditLog({ userId: (req as AuthRequest).user?.userId ?? null, action: "CREATE_USER", entity: "users", entityId: result.user.id, details: { email: result.user.email, rol: result.user.rol }, ipAddress: req.ip });
       res.status(201).json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -237,6 +241,7 @@ router.delete(
     try {
       const userId = parseInt(req.params.id);
       await authService.deleteUser(userId);
+      await auditLog({ userId: (req as AuthRequest).user?.userId ?? null, action: "DELETE_USER", entity: "users", entityId: userId, ipAddress: req.ip });
       res.json({ message: "Usuario eliminado correctamente" });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -245,8 +250,7 @@ router.delete(
 );
 
 router.post(
-  "/seed",
-  async (req: AuthRequest, res: Response) => {
+  "/seed",  async (req: AuthRequest, res: Response) => {
     try {
       const bcrypt = await import("bcryptjs");
       const passwordHash = await bcrypt.default.hashSync("admin123", 10);
@@ -277,11 +281,12 @@ router.post(
 router.post(
   "/tecnicos/asignar",
   authMiddleware,
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       const { tecnicoId, productorId } = req.body;
-      await authService.asignarTecnico(tecnicoId, productorId, req.user!.userId);
+      const asignadoPorId = req.user!.userId;
+      await authService.asignarTecnico(tecnicoId, productorId, asignadoPorId);
       res.json({ message: "Técnico asignado correctamente" });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -292,7 +297,7 @@ router.post(
 router.post(
   "/tecnicos/desasignar",
   authMiddleware,
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
       const { tecnicoId, productorId } = req.body;
@@ -307,10 +312,14 @@ router.post(
 router.get(
   "/tecnicos/asignados",
   authMiddleware,
-  requireRoles("PRODUCTOR"),
+  requireRoles("PRODUCTOR", "ADMINISTRADOR"),
   async (req: AuthRequest, res: Response) => {
     try {
-      const tecnicos = await authService.listTecnicosAsignados(req.user!.userId);
+      // Admin puede ver los técnicos de cualquier productor pasando ?productorId=X
+      const productorId = req.user!.rol === "ADMINISTRADOR" && req.query.productorId
+        ? parseInt(req.query.productorId as string)
+        : req.user!.userId;
+      const tecnicos = await authService.listTecnicosAsignados(productorId);
       res.json(tecnicos);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -340,6 +349,41 @@ router.get(
     try {
       const fincas = await authService.getFincasByTecnico(req.user!.userId);
       res.json(fincas);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// ── RF49: Logs de auditoría (solo ADMINISTRADOR) ──────────────────────────
+router.get(
+  "/audit-logs",
+  authMiddleware,
+  requireRoles("ADMINISTRADOR"),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string || "100"), 500);
+      const offset = parseInt(req.query.offset as string || "0");
+      const action = req.query.action as string | undefined;
+
+      let query = `
+        SELECT al.id, al.action, al.entity, al.entity_id, al.details,
+               al.ip_address, al.created_at,
+               u.nombre AS user_nombre, u.email AS user_email, u.rol AS user_rol
+        FROM audit_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+      `;
+      const params: any[] = [];
+      if (action) {
+        query += ` WHERE al.action = $${params.length + 1}`;
+        params.push(action);
+      }
+      query += ` ORDER BY al.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      params.push(limit, offset);
+
+      const { pool } = await import("../config/db.js");
+      const result = await pool.query(query, params);
+      res.json(result.rows);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

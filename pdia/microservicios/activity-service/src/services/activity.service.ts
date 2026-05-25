@@ -81,13 +81,29 @@ export class ActivityService {
 
   async listByCultivo(cultivoId: number, usuarioId: number, rol: string): Promise<Actividad[]> {
     let result;
-    if (rol === "PRODUCTOR") {
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a WHERE a.cultivo_id = $1 ORDER BY a.fecha DESC, a.created_at DESC`,
+        [cultivoId]
+      );
+    } else if (rol === "PRODUCTOR") {
       result = await pool.query(
         `SELECT a.* FROM actividades a
          JOIN cultivos c ON a.cultivo_id = c.id
          JOIN parcelas p ON c.parcela_id = p.id
          JOIN fincas f ON p.finca_id = f.id
          WHERE a.cultivo_id = $1 AND f.propietario_id = $2
+         ORDER BY a.fecha DESC, a.created_at DESC`,
+        [cultivoId, usuarioId]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE a.cultivo_id = $1 AND at.tecnico_id = $2
          ORDER BY a.fecha DESC, a.created_at DESC`,
         [cultivoId, usuarioId]
       );
@@ -107,15 +123,28 @@ export class ActivityService {
 
   async listByUsuario(usuarioId: number, rol: string): Promise<Actividad[]> {
     let result;
-    if (rol === "PRODUCTOR") {
-      // El productor ve todas las actividades de sus fincas,
-      // incluidas las creadas por sus operarios.
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query(
+        `SELECT * FROM actividades ORDER BY fecha DESC`
+      );
+    } else if (rol === "PRODUCTOR") {
       result = await pool.query(
         `SELECT a.* FROM actividades a
          JOIN cultivos c ON a.cultivo_id = c.id
          JOIN parcelas p ON c.parcela_id = p.id
          JOIN fincas f ON p.finca_id = f.id
          WHERE f.propietario_id = $1
+         ORDER BY a.fecha DESC`,
+        [usuarioId]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE at.tecnico_id = $1
          ORDER BY a.fecha DESC`,
         [usuarioId]
       );
@@ -135,13 +164,29 @@ export class ActivityService {
 
   async filterByTipo(usuarioId: number, rol: string, tipo: TipoActividad): Promise<Actividad[]> {
     let result;
-    if (rol === "PRODUCTOR") {
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query(
+        `SELECT * FROM actividades WHERE tipo = $1 ORDER BY fecha DESC`,
+        [tipo]
+      );
+    } else if (rol === "PRODUCTOR") {
       result = await pool.query(
         `SELECT a.* FROM actividades a
          JOIN cultivos c ON a.cultivo_id = c.id
          JOIN parcelas p ON c.parcela_id = p.id
          JOIN fincas f ON p.finca_id = f.id
          WHERE f.propietario_id = $1 AND a.tipo = $2
+         ORDER BY a.fecha DESC`,
+        [usuarioId, tipo]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE at.tecnico_id = $1 AND a.tipo = $2
          ORDER BY a.fecha DESC`,
         [usuarioId, tipo]
       );
@@ -170,6 +215,16 @@ export class ActivityService {
          JOIN parcelas p ON c.parcela_id = p.id
          JOIN fincas f ON p.finca_id = f.id
          WHERE a.id = $1 AND f.propietario_id = $2`,
+        [id, usuarioId]
+      );
+    } else if (rol === "TECNICO") {
+      result = await pool.query(
+        `SELECT a.* FROM actividades a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         JOIN asignacion_tecnicos at ON f.propietario_id = at.productor_id
+         WHERE a.id = $1 AND at.tecnico_id = $2`,
         [id, usuarioId]
       );
     } else {

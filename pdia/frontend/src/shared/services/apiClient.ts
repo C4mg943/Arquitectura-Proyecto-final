@@ -309,6 +309,7 @@ export interface RecomendacionDto {
   descripcion: string
   fecha: string
   cultivoId: number
+  origen: 'SISTEMA' | 'TECNICO'
 }
 
 export interface TecnicoAsignadoDto {
@@ -335,6 +336,19 @@ export interface FincaTecnicoDto {
   tipoFinca: TipoFinca
   propietarioId: number
   propietarioNombre?: string
+}
+
+export interface AuditLogDto {
+  id: number
+  action: string
+  entity: string
+  entity_id: number | null
+  details: Record<string, unknown> | null
+  ip_address: string | null
+  created_at: string
+  user_nombre: string | null
+  user_email: string | null
+  user_rol: string | null
 }
 
 export interface ReporteActividadesDto {
@@ -535,6 +549,7 @@ export const apiClient = {
     findOne: (id: number) => apiClient.get<AlertaDto>(`/api/alertas/${id}`),
     listByCultivo: (cultivoId: number) => apiClient.get<AlertaDto[]>(`/api/alertas/cultivo/${cultivoId}`),
     create: (payload: CreateAlertaPayload) => apiClient.post<AlertaDto>('/api/alertas', payload),
+    seedTest: () => apiClient.post<{ message: string; count: number }>('/api/alertas/seed', {}),
     markRead: (id: number) => apiClient.put<void>(`/api/alertas/${id}/read`),
     delete: (id: number) => apiClient.delete<void>(`/api/alertas/${id}`),
   },
@@ -553,7 +568,9 @@ export const apiClient = {
 
   notifications: {
     list: () => apiClient.get<NotificationDto[]>('/api/notifications'),
+    unreadCount: () => apiClient.get<{ count: number }>('/api/notifications/unread-count'),
     markRead: (id: number) => apiClient.put<void>(`/api/notifications/${id}/read`),
+    markAllRead: () => apiClient.put<void>('/api/notifications/read-all'),
   },
 
   recomendaciones: {
@@ -577,6 +594,14 @@ export const apiClient = {
     update: (id: number, payload: UpdateUserPayload) => apiClient.put<UserDto>(`/api/auth/users/${id}`, payload),
     delete: (id: number) => apiClient.delete<void>(`/api/auth/users/${id}`),
     listRoles: () => apiClient.get<string[]>('/api/auth/roles'),
+    auditLogs: (params?: { limit?: number; offset?: number; action?: string }) => {
+      const q = new URLSearchParams()
+      if (params?.limit) q.set('limit', String(params.limit))
+      if (params?.offset) q.set('offset', String(params.offset))
+      if (params?.action) q.set('action', params.action)
+      const qs = q.toString() ? `?${q.toString()}` : ''
+      return apiClient.get<AuditLogDto[]>(`/api/auth/audit-logs${qs}`)
+    },
   },
 
   tecnicos: {

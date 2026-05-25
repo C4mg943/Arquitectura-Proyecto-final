@@ -16,8 +16,6 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/dashboard'
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
@@ -32,7 +30,10 @@ export default function LoginPage() {
     try {
       const response = await apiClient.auth.login(parsed.data)
       setAuth(response.token, response.user)
-      navigate(redirectTo, { replace: true })
+      // Si venía de una ruta específica, ir ahí; si no, ir al dashboard del rol
+      const fromPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
+      const defaultDashboard = response.user.rol === 'TECNICO' ? '/tecnico' : '/dashboard'
+      navigate(fromPath ?? defaultDashboard, { replace: true })
     } catch (unknownError) {
       if (unknownError instanceof ApiClientError) {
         setError(unknownError.message)

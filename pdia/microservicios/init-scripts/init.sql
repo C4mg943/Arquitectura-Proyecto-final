@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS recomendaciones (
     descripcion TEXT NOT NULL,
     fecha DATE NOT NULL,
     cultivo_id INTEGER NOT NULL REFERENCES cultivos(id) ON DELETE CASCADE,
+    origen VARCHAR(20) NOT NULL DEFAULT 'TECNICO',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

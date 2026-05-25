@@ -25,13 +25,26 @@ async function start() {
     try {
       const userId = req.user!.userId;
       const result = await pool.query(
-        "SELECT * FROM notificaciones WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50",
+        "SELECT * FROM notificaciones WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100",
         [userId]
       );
       res.json(result.rows);
     } catch (error: any) {
       console.error("Error listing notifications:", error);
       res.status(500).json({ error: "Error al listar notificaciones" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      const result = await pool.query(
+        "SELECT COUNT(*)::int AS count FROM notificaciones WHERE user_id = $1 AND leida = false",
+        [userId]
+      );
+      res.json({ count: result.rows[0].count });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al contar notificaciones" });
     }
   });
 
@@ -49,6 +62,19 @@ async function start() {
     } catch (error: any) {
       console.error("Error marking notification as read:", error);
       res.status(500).json({ error: "Error al marcar la notificación" });
+    }
+  });
+
+  app.put("/api/notifications/read-all", authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.userId;
+      await pool.query(
+        "UPDATE notificaciones SET leida = true WHERE user_id = $1 AND leida = false",
+        [userId]
+      );
+      res.json({ message: "Todas las notificaciones marcadas como leídas" });
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al marcar notificaciones" });
     }
   });
 

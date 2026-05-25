@@ -233,7 +233,13 @@ export class FarmService {
       [data.nombre, data.municipio, data.hectareas, data.latitud, data.longitud, data.fincaId]
     );
 
-    await publishEvent("parcela.created", { parcelaId: result.rows[0].id });
+    await publishEvent("parcela.created", {
+      parcelaId: result.rows[0].id,
+      parcelaNombre: data.nombre,
+      municipio: data.municipio,
+      fincaId: data.fincaId,
+      propietarioId,
+    });
 
     return new Parcela(result.rows[0]);
   }

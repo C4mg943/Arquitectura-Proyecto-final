@@ -142,7 +142,7 @@ export default function MisTecnicosPage() {
                   <h3 className="font-semibold text-on-surface">{tecnico.nombre}</h3>
                   <p className="text-sm text-on-surface-variant">{tecnico.email}</p>
                   <p className="text-xs text-on-surface-variant">
-                    Asignado: {new Date(tecnico.fechaAsignacion).toLocaleDateString()}
+                    Asignado: {new Date(tecnico.fechaAsignacion + 'T00:00:00').toLocaleDateString()}
                   </p>
                 </div>
                 <Button size="small" onClick={() => handleDesasignar(tecnico.id)} variant="danger">

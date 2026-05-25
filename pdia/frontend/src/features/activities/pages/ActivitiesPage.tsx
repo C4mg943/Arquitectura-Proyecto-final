@@ -44,10 +44,12 @@ type DisplayActivity = ActividadDto & {
   _syncStatus?: PendingActivityRecord['status']
 }
 
-export default function ActivitiesPage() {
+export default function ActivitiesPage({ readOnly = false }: { readOnly?: boolean } = {}) {
   const user = useAuthStore((state) => state.user)
   const isOffline = useOffline()
   const { pendingList, pendingCount, isSyncing, forceSync } = useOfflineSync(user?.id)
+  // En modo readOnly (técnico) no se muestra el formulario de creación ni los pendientes
+  const canCreate = !readOnly
 
   const [serverActivities, setServerActivities] = useState<ActividadDto[]>([])
   const [fincas, setFincas] = useState<FincaDto[]>([])
@@ -354,15 +356,19 @@ export default function ActivitiesPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="text-headline-md text-on-primary-fixed-variant">Historial de Actividades</h1>
+        <h1 className="text-headline-md text-on-primary-fixed-variant">
+          {readOnly ? 'Actividades del Campo' : 'Historial de Actividades'}
+        </h1>
         <p className="mt-1 max-w-2xl text-on-surface-variant">
-          {user?.rol === 'OPERARIO'
-            ? 'Registra y consulta actividades sobre los cultivos de tus parcelas asignadas.'
-            : 'Seguimiento detallado de operaciones de campo y gestión de cultivos.'}
+          {readOnly
+            ? 'Consulta las actividades registradas por productores y operarios en los cultivos asignados.'
+            : user?.rol === 'OPERARIO'
+              ? 'Registra y consulta actividades sobre los cultivos de tus parcelas asignadas.'
+              : 'Seguimiento detallado de operaciones de campo y gestión de cultivos.'}
         </p>
       </header>
 
-      {pendingCount > 0 ? (
+      {pendingCount > 0 && canCreate ? (
         <div className="flex flex-col gap-3 rounded-2xl bg-secondary-container px-4 py-3 text-on-secondary-container sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined">cloud_sync</span>
@@ -481,133 +487,135 @@ export default function ActivitiesPage() {
         </Card>
       </div>
 
-      <Card>
-        <div className="grid gap-3 md:grid-cols-5">
-          <label className="space-y-1" htmlFor="create-activity-type">
-            <span className="text-label-md text-on-surface-variant">Tipo</span>
-            <select
-              id="create-activity-type"
-              className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-              onChange={(event) => setTipo(event.target.value as ActividadDto['tipo'])}
-              value={tipo}
-            >
-              <option value="RIEGO">Riego</option>
-              <option value="FERTILIZACION">Fertilización</option>
-              <option value="PLAGA">Plaga</option>
-              <option value="OBSERVACION">Observación</option>
-            </select>
-          </label>
-
-          <label className="space-y-1" htmlFor="create-activity-crop">
-            <span className="text-label-md text-on-surface-variant">Cultivo</span>
-            <select
-              id="create-activity-crop"
-              className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-              onChange={(event) => setCultivoId(Number(event.target.value))}
-              value={cultivoId ?? ''}
-            >
-              {cultivos.length === 0 ? <option value="">Sin cultivos</option> : null}
-              {cultivos.map((c) => (
-                <option key={c.id} value={c.id}>{c.tipoCultivo}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1" htmlFor="create-activity-date">
-            <span className="text-label-md text-on-surface-variant">Fecha</span>
-            <input
-              id="create-activity-date"
-              className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-              max={todayIso}
-              min={minFechaActividad}
-              onChange={(event) => setFecha(event.target.value)}
-              type="date"
-              value={fecha}
-            />
-            {selectedCultivo ? (
-              <span className="block text-[11px] text-on-surface-variant">
-                Desde siembra: {selectedCultivo.fechaSiembra} · Hasta hoy: {todayIso}
-              </span>
-            ) : null}
-          </label>
-
-          {tipo === 'RIEGO' && (
-            <label className="space-y-1" htmlFor="create-activity-water">
-              <span className="text-label-md text-on-surface-variant">Agua (litros)</span>
-              <input
-                id="create-activity-water"
+      {canCreate ? (
+        <Card>
+          <div className="grid gap-3 md:grid-cols-5">
+            <label className="space-y-1" htmlFor="create-activity-type">
+              <span className="text-label-md text-on-surface-variant">Tipo</span>
+              <select
+                id="create-activity-type"
                 className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-                onChange={(event) => setCantidadAgua(Number(event.target.value))}
-                type="number"
-                value={cantidadAgua}
-              />
+                onChange={(event) => setTipo(event.target.value as ActividadDto['tipo'])}
+                value={tipo}
+              >
+                <option value="RIEGO">Riego</option>
+                <option value="FERTILIZACION">Fertilización</option>
+                <option value="PLAGA">Plaga</option>
+                <option value="OBSERVACION">Observación</option>
+              </select>
             </label>
-          )}
 
-          {tipo === 'FERTILIZACION' && (
-            <label className="space-y-1" htmlFor="create-activity-fert">
-              <span className="text-label-md text-on-surface-variant">Fertilizante</span>
-              <input
-                id="create-activity-fert"
+            <label className="space-y-1" htmlFor="create-activity-crop">
+              <span className="text-label-md text-on-surface-variant">Cultivo</span>
+              <select
+                id="create-activity-crop"
                 className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-                onChange={(event) => setTipoFertilizante(event.target.value)}
-                placeholder="Ej: Urea"
+                onChange={(event) => setCultivoId(Number(event.target.value))}
+                value={cultivoId ?? ''}
+              >
+                {cultivos.length === 0 ? <option value="">Sin cultivos</option> : null}
+                {cultivos.map((c) => (
+                  <option key={c.id} value={c.id}>{c.tipoCultivo}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1" htmlFor="create-activity-date">
+              <span className="text-label-md text-on-surface-variant">Fecha</span>
+              <input
+                id="create-activity-date"
+                className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                max={todayIso}
+                min={minFechaActividad}
+                onChange={(event) => setFecha(event.target.value)}
+                type="date"
+                value={fecha}
+              />
+              {selectedCultivo ? (
+                <span className="block text-[11px] text-on-surface-variant">
+                  Desde siembra: {selectedCultivo.fechaSiembra} · Hasta hoy: {todayIso}
+                </span>
+              ) : null}
+            </label>
+
+            {tipo === 'RIEGO' && (
+              <label className="space-y-1" htmlFor="create-activity-water">
+                <span className="text-label-md text-on-surface-variant">Agua (litros)</span>
+                <input
+                  id="create-activity-water"
+                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(event) => setCantidadAgua(Number(event.target.value))}
+                  type="number"
+                  value={cantidadAgua}
+                />
+              </label>
+            )}
+
+            {tipo === 'FERTILIZACION' && (
+              <label className="space-y-1" htmlFor="create-activity-fert">
+                <span className="text-label-md text-on-surface-variant">Fertilizante</span>
+                <input
+                  id="create-activity-fert"
+                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(event) => setTipoFertilizante(event.target.value)}
+                  placeholder="Ej: Urea"
+                  type="text"
+                  value={tipoFertilizante}
+                />
+              </label>
+            )}
+
+            {tipo === 'PLAGA' && (
+              <>
+                <label className="space-y-1" htmlFor="create-activity-pest">
+                  <span className="text-label-md text-on-surface-variant">Plaga</span>
+                  <input
+                    id="create-activity-pest"
+                    className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(event) => setTipoPlaga(event.target.value)}
+                    placeholder="Ej: Pulgón"
+                    type="text"
+                    value={tipoPlaga}
+                  />
+                </label>
+                <label className="space-y-1" htmlFor="create-activity-action">
+                  <span className="text-label-md text-on-surface-variant">Acción</span>
+                  <input
+                    id="create-activity-action"
+                    className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(event) => setAccionAplicada(event.target.value)}
+                    placeholder="Ej: Insecticida"
+                    type="text"
+                    value={accionAplicada}
+                  />
+                </label>
+              </>
+            )}
+
+            <label className={`space-y-1 ${tipo === 'PLAGA' ? 'md:col-span-5' : 'md:col-span-1'}`} htmlFor="create-activity-desc">
+              <span className="text-label-md text-on-surface-variant">Observaciones</span>
+              <input
+                id="create-activity-desc"
+                className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
+                onChange={(event) => setDescripcion(event.target.value)}
+                placeholder="Detalle extra..."
                 type="text"
-                value={tipoFertilizante}
+                value={descripcion}
               />
             </label>
-          )}
+          </div>
 
-          {tipo === 'PLAGA' && (
-            <>
-              <label className="space-y-1" htmlFor="create-activity-pest">
-                <span className="text-label-md text-on-surface-variant">Plaga</span>
-                <input
-                  id="create-activity-pest"
-                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-                  onChange={(event) => setTipoPlaga(event.target.value)}
-                  placeholder="Ej: Pulgón"
-                  type="text"
-                  value={tipoPlaga}
-                />
-              </label>
-              <label className="space-y-1" htmlFor="create-activity-action">
-                <span className="text-label-md text-on-surface-variant">Acción</span>
-                <input
-                  id="create-activity-action"
-                  className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-                  onChange={(event) => setAccionAplicada(event.target.value)}
-                  placeholder="Ej: Insecticida"
-                  type="text"
-                  value={accionAplicada}
-                />
-              </label>
-            </>
-          )}
-
-          <label className={`space-y-1 ${tipo === 'PLAGA' ? 'md:col-span-5' : 'md:col-span-1'}`} htmlFor="create-activity-desc">
-            <span className="text-label-md text-on-surface-variant">Observaciones</span>
-            <input
-              id="create-activity-desc"
-              className="w-full rounded-xl border-0 bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary"
-              onChange={(event) => setDescripcion(event.target.value)}
-              placeholder="Detalle extra..."
-              type="text"
-              value={descripcion}
-            />
-          </label>
-        </div>
-
-        <div className="mt-3 flex justify-end">
-          <Button disabled={isSubmitting} onClick={() => void handleCreate()} variant="primary">
-            {isSubmitting
-              ? 'Guardando...'
-              : isOffline
-                ? 'Guardar para sincronizar'
-                : 'Registrar actividad'}
-          </Button>
-        </div>
-      </Card>
+          <div className="mt-3 flex justify-end">
+            <Button disabled={isSubmitting} onClick={() => void handleCreate()} variant="primary">
+              {isSubmitting
+                ? 'Guardando...'
+                : isOffline
+                  ? 'Guardar para sincronizar'
+                  : 'Registrar actividad'}
+            </Button>
+          </div>
+        </Card>
+      ) : null}
 
       {error ? (
         <p className="rounded-xl bg-error-container px-3 py-2 text-sm font-semibold text-on-error-container">{error}</p>
@@ -674,7 +682,7 @@ export default function ActivitiesPage() {
 
                     <div className="shrink-0 text-sm text-on-surface-variant md:text-right">
                       <p>
-                        {new Date(activity.fecha).toLocaleDateString('es-CO', {
+                        {new Date(activity.fecha + 'T00:00:00').toLocaleDateString('es-CO', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',

@@ -4,6 +4,7 @@ import { AlertService } from "../services/alert.service.js";
 import { TipoAlerta } from "../models/alert.model.js";
 import { authMiddleware, requireRoles } from "../middleware/auth.middleware.js";
 import { AuthRequest } from "../types/express.js";
+import { pool } from "../config/db.js";
 
 const router = Router();
 const alertService = new AlertService();
@@ -12,8 +13,44 @@ router.use(authMiddleware);
 
 router.get("/", async (req: AuthRequest, res: Response) => {
   try {
-    const alertas = await alertService.listByUser(req.user!.userId);
+    const alertas = await alertService.listByUser(req.user!.userId, req.user!.rol);
     res.json(alertas.map((a) => a.toJson()));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para generar alertas de prueba (solo ADMINISTRADOR)
+// Crea una alerta de cada tipo para cada cultivo activo del sistema.
+router.post("/seed", requireRoles("ADMINISTRADOR"), async (req: AuthRequest, res: Response) => {
+  try {
+    const cultivosRes = await pool.query(
+      `SELECT id FROM cultivos WHERE estado = 'EN_CRECIMIENTO' LIMIT 10`
+    );
+    if (cultivosRes.rows.length === 0) {
+      return res.status(400).json({ error: "No hay cultivos activos para generar alertas de prueba." });
+    }
+
+    const tiposAlerta = [
+      { tipo: TipoAlerta.TEMPERATURA_ALTA, valor: 38.5 },
+      { tipo: TipoAlerta.LLUVIA, valor: 85 },
+      { tipo: TipoAlerta.VIENTO, valor: 65 },
+      { tipo: TipoAlerta.TEMPERATURA_BAJA, valor: 10 },
+    ];
+
+    let created = 0;
+    for (const cultivo of cultivosRes.rows) {
+      // Una alerta por cultivo (rotando tipos)
+      const tipoData = tiposAlerta[created % tiposAlerta.length];
+      await alertService.create({
+        tipo: tipoData.tipo,
+        valor: tipoData.valor,
+        cultivoId: cultivo.id,
+      });
+      created++;
+    }
+
+    res.json({ message: `${created} alerta(s) de prueba creada(s).`, count: created });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

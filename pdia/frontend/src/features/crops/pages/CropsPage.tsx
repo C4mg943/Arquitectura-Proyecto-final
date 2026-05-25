@@ -62,7 +62,18 @@ export default function CropsPage() {
     setError(null)
 
     try {
-      const [cropsResponse, parcelasResponse] = await Promise.all([apiClient.cultivos.list(), apiClient.parcelas.list()])
+      const [cropsResponse, parcelasResponse] = await Promise.all([
+        // RF39: si hay búsqueda activa, usar el endpoint /search?tipo= del backend
+        search.trim()
+          ? apiClient.cultivos.list().then(all =>
+              all.filter(c =>
+                c.tipoCultivo.toLowerCase().includes(search.trim().toLowerCase()) ||
+                c.observaciones?.toLowerCase().includes(search.trim().toLowerCase())
+              )
+            )
+          : apiClient.cultivos.list(),
+        apiClient.parcelas.list(),
+      ])
       setCrops(cropsResponse)
       setParcelas(parcelasResponse)
 
@@ -72,8 +83,8 @@ export default function CropsPage() {
         try {
           const w = await apiClient.weather.getCurrent(pId);
           weatherMap[pId] = w.probabilidadLluvia;
-        } catch (e) {
-          console.error(`Error loading weather for parcela ${pId}:`, e);
+        } catch {
+          // ignorar errores de clima
         }
       }));
       setWeatherData(weatherMap);
@@ -86,7 +97,7 @@ export default function CropsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [search])
 
   useEffect(() => {
     void loadData()
@@ -297,24 +308,24 @@ export default function CropsPage() {
               </div>
             </div>
 
-            {/* Pills — texto xs para que quepan los 3 en la fila */}
-            <div className="grid grid-cols-3 gap-2 px-4 pb-4">
-              <div className="surface-panel rounded-xl p-2.5">
+            {/* Pills — 2 columnas con más espacio, texto legible */}
+            <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+              <div className="surface-panel rounded-xl p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Estado</p>
-                <p className="mt-1 text-xs font-semibold leading-tight text-on-surface">
+                <p className="mt-1 text-sm font-semibold leading-tight text-on-surface">
                   {mapEstadoToLabel(crop.estado)}
                 </p>
               </div>
-              <div className="surface-panel rounded-xl p-2.5">
+              <div className="surface-panel rounded-xl p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Lluvia</p>
-                <p className="mt-1 text-xs font-semibold text-on-surface">
-                  {weatherData[crop.parcelaId] !== undefined ? `${weatherData[crop.parcelaId]}%` : 'N/A'}
+                <p className="mt-1 text-sm font-semibold text-on-surface">
+                  {weatherData[crop.parcelaId] !== undefined ? `${weatherData[crop.parcelaId]}%` : '—'}
                 </p>
               </div>
-              <div className="surface-panel rounded-xl p-2.5">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Siembra</p>
-                <p className="mt-1 text-xs font-semibold leading-tight text-on-surface">
-                  {new Date(crop.fechaSiembra).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}
+              <div className="surface-panel rounded-xl p-3 col-span-2">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Fecha de siembra</p>
+                <p className="mt-1 text-sm font-semibold text-on-surface">
+                  {new Date(crop.fechaSiembra + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
             </div>

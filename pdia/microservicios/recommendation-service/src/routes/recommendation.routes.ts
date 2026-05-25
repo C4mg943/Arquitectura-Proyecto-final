@@ -10,10 +10,14 @@ const recService = new RecommendationService();
 router.use(authMiddleware);
 
 router.get("/", async (req: AuthRequest, res: Response) => {
-  const recomendaciones = req.user!.rol === "TECNICO"
-    ? await recService.listByTecnico(req.user!.userId)
-    : await recService.listByUser(req.user!.userId);
-  res.json(recomendaciones.map((r) => r.toJson()));
+  try {
+    const recomendaciones = req.user!.rol === "TECNICO"
+      ? await recService.listByTecnico(req.user!.userId)
+      : await recService.listByUser(req.user!.userId, req.user!.rol);
+    res.json(recomendaciones.map((r) => r.toJson()));
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.get("/cultivo/:cultivoId", async (req: AuthRequest, res: Response) => {

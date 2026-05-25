@@ -95,16 +95,34 @@ export class AlertService {
     return alerta;
   }
 
-  async listByUser(userId: number): Promise<Alerta[]> {
-    const result = await pool.query(
-      `SELECT a.* FROM alertas a
-       JOIN cultivos c ON a.cultivo_id = c.id
-       JOIN parcelas p ON c.parcela_id = p.id
-       JOIN fincas f ON p.finca_id = f.id
-       WHERE f.propietario_id = $1
-       ORDER BY a.fecha DESC`,
-      [userId]
-    );
+  async listByUser(userId: number, rol: string): Promise<Alerta[]> {
+    let result;
+    if (rol === "ADMINISTRADOR") {
+      result = await pool.query(
+        `SELECT * FROM alertas ORDER BY fecha DESC LIMIT 100`
+      );
+    } else if (rol === "OPERARIO") {
+      result = await pool.query(
+        `SELECT a.* FROM alertas a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN asignacion_operarios ao ON p.id = ao.parcela_id
+         WHERE ao.operario_id = $1
+         ORDER BY a.fecha DESC`,
+        [userId]
+      );
+    } else {
+      // PRODUCTOR y TECNICO: por propietario de la finca
+      result = await pool.query(
+        `SELECT a.* FROM alertas a
+         JOIN cultivos c ON a.cultivo_id = c.id
+         JOIN parcelas p ON c.parcela_id = p.id
+         JOIN fincas f ON p.finca_id = f.id
+         WHERE f.propietario_id = $1
+         ORDER BY a.fecha DESC`,
+        [userId]
+      );
+    }
     return result.rows.map((row) => new Alerta(row));
   }
 

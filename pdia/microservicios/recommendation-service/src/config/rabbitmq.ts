@@ -19,23 +19,46 @@ export async function subscribeEvents(): Promise<void> {
   if (!channel) return;
   const weatherQ = await channel.assertQueue("", { exclusive: true });
   const actividadQ = await channel.assertQueue("", { exclusive: true });
+  const cultivoQ = await channel.assertQueue("", { exclusive: true });
+
   await channel.bindQueue(weatherQ.queue, "pdia.events", "weather.updated");
   await channel.bindQueue(actividadQ.queue, "pdia.events", "actividad.created");
+  await channel.bindQueue(cultivoQ.queue, "pdia.events", "cultivo.created");
 
+  // RF30: recomendación de riego por clima
   channel.consume(weatherQ.queue, async (msg: any) => {
     if (msg) {
-      const weather = JSON.parse(msg.content.toString());
-      const recService = new (await import("../services/recommendation.service.js")).RecommendationService();
-      await recService.generateFromWeather(weather);
+      try {
+        const weather = JSON.parse(msg.content.toString());
+        const recService = new (await import("../services/recommendation.service.js")).RecommendationService();
+        await recService.generateFromWeather(weather);
+      } catch (e) { console.error("Error procesando weather.updated:", e); }
       channel?.ack(msg);
     }
   });
 
+  // RF58: recomendación fitosanitaria al detectar plaga
   channel.consume(actividadQ.queue, async (msg: any) => {
     if (msg) {
-      const actividad = JSON.parse(msg.content.toString());
-      const recService = new (await import("../services/recommendation.service.js")).RecommendationService();
-      await recService.generateFromActividad(actividad);
+      try {
+        const actividad = JSON.parse(msg.content.toString());
+        const recService = new (await import("../services/recommendation.service.js")).RecommendationService();
+        await recService.generateFromActividad(actividad);
+      } catch (e) { console.error("Error procesando actividad.created:", e); }
+      channel?.ack(msg);
+    }
+  });
+
+  // RF31: recomendación de fertilización al crear cultivo
+  channel.consume(cultivoQ.queue, async (msg: any) => {
+    if (msg) {
+      try {
+        const event = JSON.parse(msg.content.toString());
+        if (event.cultivoId && event.tipoCultivo) {
+          const recService = new (await import("../services/recommendation.service.js")).RecommendationService();
+          await recService.generateFertilizacionForCultivo(event.cultivoId, event.tipoCultivo);
+        }
+      } catch (e) { console.error("Error procesando cultivo.created:", e); }
       channel?.ack(msg);
     }
   });

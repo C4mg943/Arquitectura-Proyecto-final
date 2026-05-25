@@ -50,7 +50,22 @@ export class CropService {
     );
 
     const cultivo = new Cultivo(result.rows[0]);
-    await publishEvent("cultivo.created", { cultivoId: cultivo.getId(), tipoCultivo: data.tipoCultivo });
+
+    // Obtener propietario para enriquecer el evento
+    const propietarioRes = await pool.query(
+      `SELECT f.propietario_id FROM fincas f JOIN parcelas p ON f.id = p.finca_id WHERE p.id = $1`,
+      [data.parcelaId]
+    );
+    const propietarioId = propietarioRes.rows[0]?.propietario_id ?? null;
+
+    await publishEvent("cultivo.created", {
+      cultivoId: cultivo.getId(),
+      tipoCultivo: data.tipoCultivo,
+      parcelaId: data.parcelaId,
+      propietarioId,
+      creadoPorId: data.usuarioId,
+      creadoPorRol: data.rol,
+    });
 
     return cultivo;
   }
@@ -148,7 +163,32 @@ export class CropService {
       `UPDATE cultivos SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} RETURNING *`,
       values
     );
-    return result.rows[0] ? new Cultivo(result.rows[0]) : null;
+    const updated = result.rows[0] ? new Cultivo(result.rows[0]) : null;
+
+    if (updated) {
+      // Publicar evento de actualización con info enriquecida
+      const propietarioRes = await pool.query(
+        `SELECT f.propietario_id FROM fincas f
+         JOIN parcelas p ON f.id = p.finca_id
+         JOIN cultivos c ON p.id = c.parcela_id
+         WHERE c.id = $1`,
+        [id]
+      );
+      const propietarioId = propietarioRes.rows[0]?.propietario_id ?? null;
+
+      await publishEvent("cultivo.updated", {
+        cultivoId: updated.getId(),
+        tipoCultivo: updated.getTipoCultivo(),
+        estado: updated.getEstado(),
+        parcelaId: updated.getParcelaId(),
+        propietarioId,
+        actualizadoPorId: userId,
+        actualizadoPorRol: rol,
+        cambios: data,
+      });
+    }
+
+    return updated;
   }
 
   async delete(id: number, userId: number, rol: string): Promise<boolean> {

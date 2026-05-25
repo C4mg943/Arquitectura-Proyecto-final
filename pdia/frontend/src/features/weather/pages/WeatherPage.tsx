@@ -219,32 +219,32 @@ export default function WeatherPage() {
       ) : currentWeather ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
           {/* Current weather hero */}
-          <Card className="md:col-span-5 bg-[linear-gradient(145deg,var(--color-tertiary-container),var(--color-tertiary))] p-8 text-on-tertiary">
+          <Card className="md:col-span-5 bg-[linear-gradient(145deg,var(--color-tertiary-container),var(--color-tertiary))] p-6 text-on-tertiary">
             <p className="text-label-md uppercase tracking-wider opacity-80">Clima Actual</p>
-            <div className="mt-6 flex items-center gap-6">
-              <span className="material-symbols-outlined" style={{ fontSize: '88px' }}>
+            <div className="mt-4 flex items-center gap-4">
+              <span className="material-symbols-outlined shrink-0 opacity-90" style={{ fontSize: '64px' }}>
                 {getWeatherIcon(currentWeather.probabilidadLluvia)}
               </span>
-              <div>
-                <h2 className="font-headline text-7xl font-bold">
+              <div className="min-w-0">
+                <h2 className="font-headline text-5xl font-bold leading-none">
                   {currentWeather.temperatura.toFixed(1)}°C
                 </h2>
-                <p className="mt-2 text-base opacity-90">
-                  Probabilidad de lluvia: {currentWeather.probabilidadLluvia}%
+                <p className="mt-2 text-sm opacity-90">
+                  Lluvia: {currentWeather.probabilidadLluvia}%
                 </p>
-                <p className="mt-1 text-sm opacity-70">
+                <p className="mt-1 text-xs opacity-70">
                   Actualizado: {new Date(currentWeather.timestamp).toLocaleTimeString('es-CO')}
                 </p>
               </div>
             </div>
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <div className="rounded-xl bg-white/10 p-4">
-                <p className="text-sm opacity-80">Humedad</p>
-                <p className="font-headline text-2xl font-bold">{currentWeather.humedad}%</p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-white/10 p-3">
+                <p className="text-xs opacity-80">Humedad</p>
+                <p className="font-headline text-xl font-bold">{currentWeather.humedad}%</p>
               </div>
-              <div className="rounded-xl bg-white/10 p-4">
-                <p className="text-sm opacity-80">Viento</p>
-                <p className="font-headline text-2xl font-bold">
+              <div className="rounded-xl bg-white/10 p-3">
+                <p className="text-xs opacity-80">Viento</p>
+                <p className="font-headline text-xl font-bold">
                   {currentWeather.velocidadViento} km/h
                 </p>
               </div>

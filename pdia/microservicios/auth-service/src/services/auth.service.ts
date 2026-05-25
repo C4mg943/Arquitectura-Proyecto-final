@@ -271,6 +271,7 @@ async changePassword(userId: number, data: ChangePasswordDto): Promise<void> {
 
   async asignarTecnico(tecnicoId: number, productorId: number, asignadoPorId: number): Promise<void> {
     await this.repository.asignarTecnico(tecnicoId, productorId, asignadoPorId);
+    await publishEvent("tecnico.asignado", { tecnicoId, productorId, asignadoPorId });
   }
 
   async desasignarTecnico(tecnicoId: number, productorId: number): Promise<void> {

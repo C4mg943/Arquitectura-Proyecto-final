@@ -20,6 +20,7 @@ export default defineConfig({
 
   server: {
     allowedHosts: true,
+    host: '0.0.0.0',   // escucha en todas las interfaces, no solo localhost
     port: 5174
   }
 })

@@ -101,7 +101,7 @@ export default function TecnicoCultivosPage() {
                   <Badge variant={estadoVariants[cultivo.estado]}>{estadoLabels[cultivo.estado]}</Badge>
                 </div>
                 <div className="mt-3 text-sm text-on-surface-variant">
-                  <p>Siembra: {new Date(cultivo.fechaSiembra).toLocaleDateString()}</p>
+                  <p>Siembra: {new Date(cultivo.fechaSiembra + 'T00:00:00').toLocaleDateString()}</p>
                   {cultivo.observaciones && (
                     <p className="line-clamp-2 mt-1">{cultivo.observaciones}</p>
                   )}
@@ -147,7 +147,7 @@ export default function TecnicoCultivosPage() {
               </div>
               <div>
                 <p className="text-label-md text-on-surface-variant">Fecha de Siembra</p>
-                <p className="text-on-surface">{new Date(selectedCultivo.fechaSiembra).toLocaleDateString()}</p>
+                <p className="text-on-surface">{new Date(selectedCultivo.fechaSiembra + 'T00:00:00').toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-label-md text-on-surface-variant">Estado</p>

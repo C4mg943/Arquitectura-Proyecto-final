@@ -114,7 +114,7 @@ export default function TecnicoDashboard() {
                     <p className="font-medium text-on-surface">{rec.tipo}</p>
                     <p className="text-sm text-on-surface-variant line-clamp-1">{rec.descripcion}</p>
                   </div>
-                  <span className="text-xs text-on-surface-variant">{new Date(rec.fecha).toLocaleDateString()}</span>
+                  <span className="text-xs text-on-surface-variant">{new Date(rec.fecha + 'T00:00:00').toLocaleDateString()}</span>
                 </div>
               ))}
             </div>

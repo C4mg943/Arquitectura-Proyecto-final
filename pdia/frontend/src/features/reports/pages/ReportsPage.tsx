@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import jsPDF from 'jspdf'
 
 import { Button, Card } from '../../../shared/components/common'
 import { apiClient, ApiClientError, type CultivoDto, type ActividadDto } from '../../../shared/services/apiClient'
@@ -12,6 +13,35 @@ const activityMeta: Record<ActividadDto['tipo'], { label: string; icon: string; 
 
 type ReporteTipo = 'ACTIVIDADES' | 'RIEGOS' | 'FERTILIZACIONES' | 'RENDIMIENTO'
 
+interface ReporteReciente {
+  tipo: ReporteTipo
+  fecha: string
+  registros: number
+  archivo: string
+}
+
+const STORAGE_KEY = 'pdia-reportes-recientes'
+
+function loadReportesRecientes(): ReporteReciente[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as ReporteReciente[]
+  } catch {
+    return []
+  }
+}
+
+function saveReporteReciente(reporte: ReporteReciente): void {
+  try {
+    const existing = loadReportesRecientes()
+    const updated = [reporte, ...existing].slice(0, 10) // máximo 10
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  } catch {
+    // ignorar errores de storage
+  }
+}
+
 export default function ReportsPage() {
   const [cultivos, setCultivos] = useState<CultivoDto[]>([])
   const [actividades, setActividades] = useState<ActividadDto[]>([])
@@ -22,6 +52,7 @@ export default function ReportsPage() {
   const [tipoActividad, setTipoActividad] = useState<string>('TODAS')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>(() => loadReportesRecientes())
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -58,6 +89,82 @@ export default function ReportsPage() {
     return matchCultivo && matchTipo && matchFecha
   })
 
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    const titulo = reporteTipo === 'ACTIVIDADES' ? 'Reporte de Actividades'
+      : reporteTipo === 'RIEGOS' ? 'Reporte de Riegos'
+      : reporteTipo === 'FERTILIZACIONES' ? 'Reporte de Fertilizaciones'
+      : 'Reporte de Rendimiento'
+
+    // ── Encabezado ──────────────────────────────────────────────────────────
+    doc.setFillColor(21, 66, 18)
+    doc.rect(0, 0, 210, 28, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(16)
+    doc.text('PDIA - Plataforma Digital de Agricultura Inteligente', 14, 12)
+    doc.setFontSize(11)
+    doc.text(titulo, 14, 22)
+
+    // ── Metadata ─────────────────────────────────────────────────────────────
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(8)
+    doc.text(`Generado: ${new Date().toLocaleString('es-CO')}   Registros: ${filteredActividades.length}`, 14, 34)
+
+    // ── Cabecera de tabla ────────────────────────────────────────────────────
+    const colWidths = [35, 25, 90, 35]
+    const headers = ['Tipo', 'Fecha', 'Descripción', 'Cultivo']
+    let y = 40
+
+    doc.setFillColor(21, 66, 18)
+    doc.rect(14, y, 182, 7, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(8)
+    let x = 14
+    headers.forEach((h, i) => { doc.text(h, x + 2, y + 5); x += colWidths[i] })
+    y += 7
+
+    // ── Filas ────────────────────────────────────────────────────────────────
+    filteredActividades.forEach((a, idx) => {
+      if (y > 270) { doc.addPage(); y = 20 }
+      const cultivo = cultivos.find((c) => c.id === a.cultivoId)
+      const row = [
+        activityMeta[a.tipo]?.label ?? a.tipo,
+        a.fecha,
+        a.descripcion.length > 55 ? a.descripcion.slice(0, 52) + '...' : a.descripcion,
+        cultivo?.tipoCultivo ?? `Cultivo #${a.cultivoId}`,
+      ]
+      if (idx % 2 === 0) {
+        doc.setFillColor(245, 250, 245)
+        doc.rect(14, y, 182, 7, 'F')
+      }
+      doc.setTextColor(40, 40, 40)
+      x = 14
+      row.forEach((cell, i) => { doc.text(String(cell), x + 2, y + 5); x += colWidths[i] })
+      y += 7
+    })
+
+    // ── Pie de página ────────────────────────────────────────────────────────
+    const pageCount = (doc as any).internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(7)
+      doc.setTextColor(150)
+      doc.text(`Página ${i} de ${pageCount}`, 14, 290)
+    }
+
+    const filename = `reporte-${reporteTipo.toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(filename)
+
+    const nuevo: ReporteReciente = {
+      tipo: reporteTipo,
+      fecha: new Date().toISOString(),
+      registros: filteredActividades.length,
+      archivo: filename,
+    }
+    saveReporteReciente(nuevo)
+    setReportesRecientes(loadReportesRecientes())
+  }
+
   const generateCSV = () => {
     const headers = reporteTipo === 'ACTIVIDADES'
       ? ['ID', 'Tipo', 'Fecha', 'Descripción', 'Cultivo ID']
@@ -80,9 +187,20 @@ export default function ReportsPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `reporte-${reporteTipo.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`
+    const filename = `reporte-${reporteTipo.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`
+    link.download = filename
     link.click()
     URL.revokeObjectURL(url)
+
+    // Guardar en historial local
+    const nuevo: ReporteReciente = {
+      tipo: reporteTipo,
+      fecha: new Date().toISOString(),
+      registros: filteredActividades.length,
+      archivo: filename,
+    }
+    saveReporteReciente(nuevo)
+    setReportesRecientes(loadReportesRecientes())
   }
 
   if (isLoading) {
@@ -232,8 +350,8 @@ export default function ReportsPage() {
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button className="flex-1" disabled variant="secondary">
-            PDF (próximamente)
+          <Button className="flex-1" leadingIcon="picture_as_pdf" onClick={generatePDF} variant="secondary">
+            PDF
           </Button>
           <Button className="flex-1" leadingIcon="download" onClick={generateCSV} variant="primary">
             CSV
@@ -297,10 +415,26 @@ export default function ReportsPage() {
 
       <Card className="bg-surface-container-high">
         <p className="mb-3 text-title-sm font-medium text-on-surface">Reportes Recientes</p>
-        <div className="py-4 text-center">
-          <span className="material-symbols-outlined text-2xl text-on-surface-variant">folder_open</span>
-          <p className="mt-1 text-sm text-on-surface-variant">Aún no hay reportes descargados en esta sesión.</p>
-        </div>
+        {reportesRecientes.length === 0 ? (
+          <div className="py-4 text-center">
+            <span className="material-symbols-outlined text-2xl text-on-surface-variant">folder_open</span>
+            <p className="mt-1 text-sm text-on-surface-variant">Aún no hay reportes descargados.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {reportesRecientes.map((r, i) => (
+              <div key={i} className="flex items-center justify-between rounded-xl bg-surface-container-low px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-on-surface">{r.archivo}</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {r.registros} registros · {new Date(r.fecha).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-on-surface-variant">download_done</span>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </section>
   )

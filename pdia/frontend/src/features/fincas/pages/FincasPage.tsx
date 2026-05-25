@@ -266,7 +266,7 @@ export default function FincasPage({ adminMode = false }: { adminMode?: boolean 
                 <div className="min-w-0 flex-1">
                   {/* Nombre + Badge en la misma línea, badge baja si no cabe */}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <h3 className="text-base font-bold text-on-surface">{finca.nombre}</h3>
+                    <h3 className="break-words text-base font-bold text-on-surface">{finca.nombre}</h3>
                     <Badge className="shrink-0 px-3 py-0.5 text-xs" variant={badge.variant}>
                       {badge.text}
                     </Badge>
@@ -275,17 +275,17 @@ export default function FincasPage({ adminMode = false }: { adminMode?: boolean 
                 </div>
               </div>
 
-              {/* Pills de stats — fuera del flex para usar el ancho total */}
+              {/* Pills de stats */}
               <div className="grid grid-cols-2 gap-2 px-4 pb-4">
                 <div className="surface-panel rounded-xl p-3">
-                  <p className="text-xs font-medium text-on-surface-variant">ÁREA</p>
-                  <p className="mt-1 whitespace-nowrap text-xl font-bold text-on-surface">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Área</p>
+                  <p className="mt-1 text-lg font-bold text-on-surface">
                     {finca.area} Ha
                   </p>
                 </div>
                 <div className="surface-panel rounded-xl p-3">
-                  <p className="text-xs font-medium text-on-surface-variant">TIPO</p>
-                  <p className="mt-1 text-base font-semibold text-on-surface">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-on-surface-variant">Tipo</p>
+                  <p className="mt-1 text-sm font-semibold text-on-surface">
                     {getTipoLabel(finca.tipoFinca)}
                   </p>
                 </div>
