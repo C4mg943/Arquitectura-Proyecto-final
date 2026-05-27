@@ -10,7 +10,7 @@ build/
 **/build/
 *.tsbuildinfo
 
-# --- Documentos ---
+# --- Documentos ofimáticos ---
 *.docx
 *.xlsx
 *.pdf
@@ -22,6 +22,8 @@ tercer entregable/
 postgres_data/
 **/postgres_data/
 .env
+.env.*
+!.env.example
 *.local
 
 # --- Editor / sistema ---
