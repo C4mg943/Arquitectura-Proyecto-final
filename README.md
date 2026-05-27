@@ -245,7 +245,7 @@ Esta es la forma más fácil: levanta toda la infraestructura (BD, broker, gatew
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/<usuario>/Arquitectura-Proyecto-final.git
+git clone https://github.com/C4mg943/Arquitectura-Proyecto-final.git
 cd Arquitectura-Proyecto-final
 ```
 
